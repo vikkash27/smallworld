@@ -74,7 +74,7 @@ export class WhatsAppTransport {
     const socket = makeWASocket({
       auth: this.auth.state,
       logger: pino({ level: "silent" }),
-      browser: Browsers.macOS("Desktop"),
+      browser: Browsers.macOS("Chrome"),
       syncFullHistory: true,
       markOnlineOnConnect: false,
       getMessage: async () => undefined,
@@ -119,7 +119,8 @@ export class WhatsAppTransport {
             | { output?: { statusCode?: number } }
             | undefined
         )?.output?.statusCode;
-        this.loggedOut = code === DisconnectReason.loggedOut;
+        console.log(`WhatsApp connection closed (provider code ${code ?? 'unknown'})`);
+      this.loggedOut = code === DisconnectReason.loggedOut;
         void this.event({
           type: "status",
           status: this.loggedOut ? "failed" : "connecting",
