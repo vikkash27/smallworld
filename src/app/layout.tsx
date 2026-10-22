@@ -1,26 +1,26 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
+import type { ReactNode } from "react";
+import { AppShell } from "@/components/shell/AppShell";
 import "./globals.css";
-import { Header } from "@/components/shell/Header";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
+  fallback: ["system-ui", "-apple-system", "sans-serif"],
+});
 
 export const metadata: Metadata = {
-  title: "Small World",
-  description: "Find your people. Start something together.",
+  title: "smallworld",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Header />
-        <main>{children}</main>
+    <html lang="en" className={inter.variable}>
+      <body>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
