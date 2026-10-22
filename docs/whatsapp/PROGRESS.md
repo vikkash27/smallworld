@@ -22,3 +22,5 @@ Verification: npm test passed 214 tests across 26 files; root TypeScript and wor
 Provider finding: the Desktop browser descriptor repeatedly closed with provider code 428 before a QR. A fresh Chrome-descriptor socket produced a QR immediately. Switched the adapter to the observed working Chrome descriptor; no pairing payload was logged.
 
 Pairing repair: backported upstream #2749 and #2765 into pinned rc14 with guarded install/start verification. Four regression cases failed before the fix and pass after it. User confirmed successful phone linking. Full suite: 218 passed; both TypeScript checks passed.
+
+Upstream reconciliation: fetched GitHub main at 3d29c92 and merged it locally into feat/whatsapp-integration (merge commit 4759477). No merge conflicts. All 25 upstream-updated files are byte-for-byte identical to origin/main. Only WhatsApp feature paths and the minimal shared wiring differ. Removed unrelated tsconfig formatting drift. Post-merge verification: 222 tests passed across 27 files; web/worker TypeScript passed; production build passed. No push to GitHub and no modification of remote main.
