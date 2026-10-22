@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/shell/Header";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Small World — Bootstrap placeholder",
-  description:
-    "Small World baseline scaffold. Product interface coming from Track A.",
+  title: "Small World",
+  description: "Find your people. Start something together.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: ReactNode }>) {
+}: Readonly<{
+  children: ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>
+        <Header />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }
