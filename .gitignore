@@ -1,0 +1,12 @@
+/node_modules/
+/.next/
+/out/
+/coverage/
+*.tsbuildinfo
+.env*
+!.env.example
+/.convex/
+/convex/.env.local
+/convex/.env
+.DS_Store
+*.log
