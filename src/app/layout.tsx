@@ -14,6 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "smallworld",
+  icons: { icon: "/logo.svg" },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

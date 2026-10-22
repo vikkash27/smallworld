@@ -86,6 +86,21 @@ describe("draftCircle", () => {
     expect(draft?.proposedMemberIds).not.toContain("viewer-vikkash");
   });
 
+  it("proposes only the first three people when the shortlist is longer", () => {
+    const ordered = [
+      person("demo-nina"),
+      person("demo-amara"),
+      person("demo-leo"),
+      person("demo-sam"),
+      person("demo-kai"),
+    ];
+    expect(draftCircle(ROBOTICS_GOAL, ordered)?.proposedMemberIds).toEqual([
+      "demo-nina",
+      "demo-amara",
+      "demo-leo",
+    ]);
+  });
+
   it("preserves goal casing after stripping punctuation and stopwords", () => {
     const draft = draftCircle("I WANT TO Build WAREHOUSE Robotics!!!", roboticsPeople);
 

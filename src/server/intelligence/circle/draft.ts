@@ -25,6 +25,8 @@ const STOPWORDS = new Set([
 
 const TOPIC_MAX = 80;
 const TITLE_MAX = 80;
+/** Invitations stay a small group even when the graph shows a wider shortlist. */
+const PROPOSED_MEMBERS = 3;
 
 /** Proposal text only. Never claims a person has accepted or will attend. */
 export function draftCircle(goal: string, people: PersonRecommendation[]): CircleDraft | null {
@@ -45,7 +47,7 @@ export function draftCircle(goal: string, people: PersonRecommendation[]): Circl
       timezone: "Europe/London",
       location: null,
     },
-    proposedMemberIds: people.map((person) => person.member.id),
+    proposedMemberIds: people.slice(0, PROPOSED_MEMBERS).map((person) => person.member.id),
     capacity: 6,
     minimumMembers: 3,
   };

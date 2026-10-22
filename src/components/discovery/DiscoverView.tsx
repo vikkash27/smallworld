@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ApiFailure,
   BootstrapResponse,
@@ -11,28 +11,20 @@ import type {
   PersonRecommendation,
 } from "@/shared/contracts";
 import { circleHandoffPath, discover, type DiscoveryResult } from "@/ui/discovery/client";
+import { formatHistoryTime, loadHistory, rememberSearch, saveHistory, type HistoryEntry } from "./history";
+import { ResultGraph } from "./ResultGraph";
 import { WhyDrawer } from "./WhyDrawer";
-import { fitLabel } from "./labels";
 
 type SearchState =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "ready"; response: DiscoverResponse }
-  | { kind: "empty"; response: DiscoverResponse }
+  | { kind: "ready"; response: DiscoverResponse; goal: string }
+  | { kind: "empty"; response: DiscoverResponse; goal: string }
   | { kind: "error"; error: ApiFailure["error"] };
 
-const MAX_PEOPLE = 3;
-
-const CARD_BASE = {
-  color: "#FFFFFF",
-  borderRadius: 12,
-  padding: 24,
-  display: "flex",
-  flexDirection: "column",
-  gap: 16,
-  minHeight: 280,
-  boxSizing: "border-box",
-} as const;
+function peopleHeading(count: number): string {
+  return count === 1 ? "1 person for this goal" : `${count} people for this goal`;
+}
 
 function namesFor(ids: Id[], bootstrap: BootstrapResponse): string[] {
   const out: string[] = [];
@@ -53,9 +45,14 @@ export function DiscoverView(props: {
 
   const [goal, setGoal] = useState(initialGoal ?? "");
   const [state, setState] = useState<SearchState>({ kind: "idle" });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [whyPerson, setWhyPerson] = useState<PersonRecommendation | null>(null);
   const requestSeq = useRef(0);
   const openerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
 
   const search = useCallback(
     async (rawGoal: string) => {
@@ -86,18 +83,40 @@ export function DiscoverView(props: {
       }
       const response = result.data;
       if (response.status === "empty" || response.people.length === 0) {
-        setState({ kind: "empty", response });
+        setState({ kind: "empty", response, goal: trimmed });
       } else {
-        setState({ kind: "ready", response });
+        setState({ kind: "ready", response, goal: trimmed });
       }
+      setHistory((current) => {
+        const next = rememberSearch(current, { goal: trimmed, response });
+        saveHistory(next);
+        return next;
+      });
     },
     [run, bootstrap.allowedCommunityIds],
   );
 
+  const openHistory = useCallback((entry: HistoryEntry) => {
+    setGoal(entry.goal);
+    setWhyPerson(null);
+    if (entry.response.status === "empty" || entry.response.people.length === 0) {
+      setState({ kind: "empty", response: entry.response, goal: entry.goal });
+    } else {
+      setState({ kind: "ready", response: entry.response, goal: entry.goal });
+    }
+  }, []);
+
+  function startNew() {
+    setGoal("");
+    setWhyPerson(null);
+    setState({ kind: "idle" });
+    document.getElementById("goal")?.focus();
+  }
+
   const loading = state.kind === "loading";
-  const searchingIn = namesFor(bootstrap.allowedCommunityIds, bootstrap);
   const responseMode =
     state.kind === "ready" || state.kind === "empty" ? state.response.dataMode : null;
+  const activeSearchId = state.kind === "ready" || state.kind === "empty" ? state.response.searchId : null;
   const isSample = bootstrap.dataMode === "sample" || responseMode === "sample";
 
   function closeWhy() {
@@ -127,17 +146,47 @@ export function DiscoverView(props: {
         A shared goal. A good reason to meet.
       </p>
 
+      <div className="sw-discover">
+        <aside className="sw-history" aria-label="Search history">
+          <h2 className="sw-history-label">History</h2>
+          <button type="button" className="sw-history-new" onClick={startNew}>
+            New goal
+          </button>
+          {history.length === 0 ? (
+            <p className="sw-history-empty">Goals you search stay on this device.</p>
+          ) : (
+            <ul className="sw-history-list">
+              {history.map((entry) => (
+                <li key={entry.searchId}>
+                  <button
+                    type="button"
+                    className="sw-history-item"
+                    aria-current={entry.searchId === activeSearchId ? "true" : undefined}
+                    onClick={() => openHistory(entry)}
+                  >
+                    <span className="sw-history-goal">{entry.goal}</span>
+                    <time className="sw-history-time" dateTime={entry.at}>
+                      {formatHistoryTime(entry.at)}
+                    </time>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+
+        <div className="sw-discover-main">
       <form
+        className="sw-search"
         onSubmit={(e) => {
           e.preventDefault();
           if (!loading) void search(goal);
         }}
-        style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 10, maxWidth: 880 }}
       >
         <label htmlFor="goal" className="sw-label" style={{ fontWeight: 600, fontSize: 15 }}>
           What do you want to build?
         </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        <div className="sw-search-row">
           <input
             id="goal"
             name="goal"
@@ -147,7 +196,6 @@ export function DiscoverView(props: {
             placeholder="I want to build warehouse robotics with people in London."
             autoComplete="off"
             style={{
-              flex: "999 1 320px",
               minWidth: 0,
               minHeight: 52,
               boxSizing: "border-box",
@@ -165,7 +213,6 @@ export function DiscoverView(props: {
             disabled={loading}
             className="sw-btn sw-btn-brand"
             style={{
-              flex: "1 1 160px",
               minHeight: 52,
               padding: "0 24px",
               border: 0,
@@ -185,18 +232,8 @@ export function DiscoverView(props: {
         </div>
       </form>
 
-      <div
-        style={{
-          marginTop: 20,
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: "8px 16px",
-          fontSize: 14,
-          color: "#55555D",
-        }}
-      >
-        {isSample ? (
+      {isSample ? (
+        <div className="sw-search-meta">
           <span
             style={{
               display: "inline-flex",
@@ -211,30 +248,13 @@ export function DiscoverView(props: {
           >
             Sample context
           </span>
-        ) : null}
-        {searchingIn.length > 0 ? (
-          <span style={{ marginLeft: "auto" }}>Searching in: {searchingIn.join(" · ")}</span>
-        ) : null}
-      </div>
-
-      {state.kind === "idle" ? (
-        <div
-          style={{
-            marginTop: 48,
-            padding: 32,
-            border: "1px dashed #DEDEE5",
-            borderRadius: 12,
-            color: "#55555D",
-            fontSize: 15,
-          }}
-        >
-          Describe a goal. We&apos;ll suggest up to three people from your communities, and why.
         </div>
       ) : null}
 
       {state.kind === "ready" ? (
         <ReadyResults
           bootstrap={bootstrap}
+          goal={state.goal}
           response={state.response}
           onWhy={(person, opener) => {
             openerRef.current = opener;
@@ -311,6 +331,8 @@ export function DiscoverView(props: {
           ) : null}
         </div>
       ) : null}
+        </div>
+      </div>
 
       {whyPerson ? (
         <WhyDrawer
@@ -325,11 +347,23 @@ export function DiscoverView(props: {
 
 function ReadyResults(props: {
   bootstrap: BootstrapResponse;
+  goal: string;
   response: DiscoverResponse;
   onWhy: (person: PersonRecommendation, opener: HTMLElement) => void;
 }) {
-  const { bootstrap, response, onWhy } = props;
-  const people = response.people.slice(0, MAX_PEOPLE);
+  const { bootstrap, goal, response, onWhy } = props;
+  const people = response.people;
+  const graphCommunities = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const person of people) {
+      for (const id of person.member.communityIds) {
+        if (seen.has(id)) continue;
+        const name = bootstrap.communities.find((community) => community.id === id)?.name;
+        if (name) seen.set(id, name);
+      }
+    }
+    return [...seen].map(([id, name]) => ({ id, name }));
+  }, [people, bootstrap.communities]);
   const fits = response.communities
     .map((fit) => ({ fit, name: bootstrap.communities.find((c) => c.id === fit.communityId)?.name ?? null }))
     .filter((x): x is { fit: (typeof response.communities)[number]; name: string } => x.name !== null);
@@ -337,86 +371,9 @@ function ReadyResults(props: {
 
   return (
     <div style={{ marginTop: 48 }}>
-      <h2 style={{ margin: "0 0 20px", fontSize: 22, letterSpacing: "-0.01em" }}>
-        {people.length} people for this goal
-      </h2>
-      <div
-        className="sw-people"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
-          gap: 16,
-        }}
-      >
-        {people.map((p, i) => {
-          const lead = i === 0;
-          const names = namesFor(p.member.communityIds, bootstrap).join(" · ");
-          return (
-            <article
-              key={p.member.id}
-              className={lead ? "sw-card-lead" : "sw-tile"}
-              style={{ ...CARD_BASE, background: lead ? "#4334F5" : "#18181C" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <div
-                  aria-hidden="true"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    background: "rgba(255,255,255,0.16)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 600,
-                  }}
-                >
-                  {p.member.initials}
-                </div>
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.16)",
-                  }}
-                >
-                  {fitLabel(p.fitType)}
-                </span>
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 24, letterSpacing: "-0.02em" }}>{p.member.displayName}</h3>
-                {names ? (
-                  <p style={{ margin: "2px 0 0", fontSize: 14, color: lead ? "rgba(255,255,255,0.82)" : "#B4B4BC" }}>{names}</p>
-                ) : null}
-              </div>
-              <p style={{ margin: 0, fontSize: 15, flex: "1 1 auto" }}>{p.reason}</p>
-              <button
-                type="button"
-                className="on-brand"
-                aria-haspopup="dialog"
-                onClick={(e) => onWhy(p, e.currentTarget)}
-                style={{
-                  alignSelf: "flex-start",
-                  minHeight: 44,
-                  padding: "0 16px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.5)",
-                  background: "transparent",
-                  color: "#FFFFFF",
-                  font: "inherit",
-                  fontWeight: 600,
-                  fontSize: 15,
-                  cursor: "pointer",
-                }}
-              >
-                Why this person?
-              </button>
-            </article>
-          );
-        })}
-      </div>
+      <h2 style={{ margin: "0 0 4px", fontSize: 22, letterSpacing: "-0.01em" }}>{peopleHeading(people.length)}</h2>
+      <p style={{ margin: "0 0 16px", fontSize: 14, color: "#55555D" }}>Linked by the communities they share.</p>
+      <ResultGraph goal={goal} people={people} communities={graphCommunities} onWhy={onWhy} />
 
       {fits.length > 0 ? (
         <section aria-labelledby="community-fit-title" style={{ marginTop: 24 }}>

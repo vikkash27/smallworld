@@ -1,172 +1,109 @@
-# Small World
+<div align="center">
 
-Find your people. Start something together.
+<img src="docs/media/banner.png" alt="Small World — Find your people. Start something together." width="100%">
 
-Track C supplies the platform API, signed organizer sessions, permission-filtered
-context/search storage, circles, invitation responses and a fictional demo reset.
-The baseline page remains a placeholder for Track A; discovery logic and circle
-screens belong to Tracks B and D. MIT licensed; see [LICENSE](LICENSE).
+<br>
 
-## Quick start
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](package.json)
+[![Convex](https://img.shields.io/badge/Convex-local%20or%20cloud-EE342F)](convex/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
+[![Tests](https://img.shields.io/badge/vitest-198%20tests-6E9F18)](tests/)
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Use Node.js 22.12+ within v22 and npm. The first Convex run downloads a local
-backend. From a fresh clone:
+**Find your people. Start something together.**
+
+[**Run it locally**](#run-locally) · [**The loop**](#the-loop) · [**API**](#api) · [**Privacy**](#data--privacy)
+
+</div>
+
+---
+
+Community leads know their members as phone numbers. Nobody gets introduced, threads
+die, and finding a good panellist means asking around.
+
+Small World fixes the "who should I talk to" problem with consent-first people
+discovery. An organizer types a concrete goal — *"find someone who knows robotics
+and can hack on hardware"* — and gets back up to three people and two communities,
+each with quoted evidence and honest caveats. One click proposes a small circle
+with a purpose and a first activity. Invitees join or decline through a link that
+leaks nothing. The circle goes live when enough people say yes.
+
+Every recommendation cites its evidence. Fictional demo data is labelled as such.
+Real community data only appears after members explicitly opt in.
+
+## What it does
+
+| | |
+| --- | --- |
+| **Grounded discovery** | Goals are matched against opt-in contributions and approved summaries — never scraped profiles, never inferred traits. Each result shows the evidence excerpt it came from, plus caveats like "availability unknown". |
+| **Connections & speakers** | `mode: connections` finds collaborators; `mode: speaker` finds panellists and demo candidates with proof of what they've built. |
+| **Circle proposals** | The organizer picks people from a saved search; the system drafts a circle with a purpose and first activity. The creator is host and member one. |
+| **Explicit invitations** | Join/decline links are hashed, expire in 24h, and are shown exactly once. Public previews show no other invitees, no private evidence, no raw context. Duplicate joins are idempotent; seats are allocated atomically. |
+| **Activation, not vibes** | A circle turns `active` only when enough members accepted *and* the first activity is confirmed. Pending invites don't count. |
+| **Communities directory** | 12 London communities ship as `listed` with verified public links. They become `participating` only through real opt-in onboarding. |
+
+## The loop
+
+```
+goal → 3 people + 2 communities (with evidence) → proposed circle
+     → invite links out → explicit join/decline → activity confirmed → active
+```
+
+## Run locally
+
+Node.js 22.12+ and npm. The first Convex run downloads a local backend — no account needed.
 
 ```bash
 npm install
 cp .env.example .env.local
-npx convex dev --local
+npx convex dev --local          # keep running; terminal 1
 ```
 
-Keep that terminal running. `npx convex dev --local --once` can initialize the
-local deployment, but stops its backend on completion; use the persistent command
-above while running the application. No Convex account is required for anonymous
-local development. In a second terminal:
-
 ```bash
-npm run platform:env
-# Edit .env.local: set ADMIN_PASSWORD to your organizer password.
-npm run seed
-npm run dev
+npm run platform:env            # writes CONVEX_URL / keys into .env.local
+# edit .env.local: set ADMIN_PASSWORD
+npm run seed                    # 12 communities + labelled fictional members
+npm run dev                     # terminal 2 → http://localhost:3000
 ```
 
-`platform:env` copies the local deployment's URL and admin key into server-only
-`CONVEX_URL` / `CONVEX_DEPLOY_KEY` and generates missing signing/hash secrets. It
-preserves existing settings and restricts `.env.local` to the current user. Env
-files, keys and local database state are ignored by Git. Restart Next after
-changing environment settings. Open <http://localhost:3000>.
+Sign in at `/login` with `ADMIN_PASSWORD`. The sample workspace ships with a
+robotics-goal search (`demo-search-robotics`) so discovery works immediately.
+`POST /api/platform/demo/reset` rebuilds fictional data; live data is untouched.
 
-`npm run seed` invokes the internal `seed:run` mutation through the admin client.
-It creates the 12 directory entries as `listed`, organizer members, fictional
-sample members/approved signals/evidence/sources, a sample search valid for 30
-minutes, and a separate empty live workspace. It prints a contribution URL once
-for testing (24-hour capability); seeding again rotates that capability. The raw
-capability is never persisted. The CLI equivalent requires a precomputed HMAC:
-`npx convex run seed:run '{"contributionTokenHash":"<HMAC-SHA256 hex>"}'`.
-Use demo reset to refresh the fictional sample search after expiry.
+## API
 
-The base directory stays listed. Only the fictional sample workspace presents
-Unicorn Mafia and Kickstart Global as participating. Live mode starts with no
-participating communities or fictional people. See the frozen
-[fixture semantics](src/shared/fixtures/FIXTURES.md).
+All responses are `{ data, requestId }` or `{ error: { code, message, retryable }, requestId }`.
+Organizer session: `POST /api/platform/session` (HttpOnly cookie, 5 attempts/min).
 
-## Environment
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/platform/bootstrap` · `GET /api/platform/communities` | Viewer context and directory |
+| `POST /api/intelligence/discover` | Grounded people/community recommendations |
+| `GET /api/platform/searches/:id` | Viewer-owned search snapshot (30 min) |
+| `POST` / `GET /api/platform/circles` · `GET` / `PATCH /api/platform/circles/:id` | Create, list, detail, activity |
+| `GET /api/platform/invitations/:token` | Read-only public preview — never mutates |
+| `POST /api/platform/invitations/:token/respond` | Explicit join/decline, idempotent |
+| `POST /api/platform/contributions` | Opt-in contribution via capability token |
 
-| Variable                | Purpose                                                            |
-| ----------------------- | ------------------------------------------------------------------ |
-| `CONVEX_DEPLOYMENT`     | Local CLI deployment selector, generated by Convex                 |
-| `CONVEX_URL`            | Server endpoint, normally `http://127.0.0.1:3210`                  |
-| `CONVEX_DEPLOY_KEY`     | Server-only admin/deployment key; permits internal functions       |
-| `APP_BASE_URL`          | Public application origin used in invitation URLs                  |
-| `ADMIN_PASSWORD`        | Server-validated organizer password; required for login            |
-| `SESSION_SECRET`        | Random HMAC signing secret; sessions last 12 hours                 |
-| `TOKEN_HASH_SECRET`     | Random HMAC-SHA256 secret for invitation/contribution capabilities |
-| `NEXT_PUBLIC_DATA_MODE` | `sample` (default) or `live`                                       |
+## Data & privacy
 
-The env template also reserves `XAI_API_KEY`, `XAI_MODEL`, `COGNEE_ENABLED`,
-`COGNEE_BASE_URL` and `COGNEE_API_KEY` for Track B. Provider/deployment keys must
-never use `NEXT_PUBLIC_*`. The Convex CLI may generate a public backend URL; no
-browser client uses it for private queries. Only the Next server uses admin auth.
+- Only opt-in contributions and approved summaries are matchable. No raw chat text,
+  no contact details, no inferred personality or sensitive traits.
+- Fictional sample data is explicitly labelled; real communities stay `listed`
+  until genuinely onboarded.
+- Invitation tokens are 32 random bytes stored as HMAC-SHA256 hashes, returned once.
+- Admin keys stay server-side; anonymous callers cannot reach internal Convex
+  functions. Sample mode without `CONVEX_URL` runs on an isolated in-memory fixture.
 
-With no `CONVEX_URL`, sample mode uses an isolated in-memory fixture adapter;
-it loses changes on process restart. Its contribution token is
-`sample-contribution-capability` when `TOKEN_HASH_SECRET` is configured. Live mode
-requires Convex and a valid signed session. There is no automatic login.
-
-## API and demo reset
-
-Every response has `{ data, requestId }` or
-`{ error: { code, message, retryable }, requestId }` and `Cache-Control: no-store`.
-Authenticate by POSTing `{ "password": "..." }` to `/api/platform/session`, then
-retain the `sw_session` cookie. It is HttpOnly, SameSite=Lax, and Secure in
-production. Login permits five attempts per minute per IP in each server process.
-Only trust forwarded IP headers from your deployment's reverse proxy.
-
-Authenticated endpoints:
-
-- `GET /api/platform/bootstrap`, `GET /api/platform/communities`
-- `GET /api/platform/searches/:id` (viewer-owned, unexpired snapshot)
-- `POST /api/platform/circles`, `GET /api/platform/circles`
-- `GET /api/platform/circles/:id` (creator only)
-- `PATCH /api/platform/circles/:id/activity`
-- `POST /api/platform/demo/reset`
-
-Public capability endpoints:
-
-- `POST /api/platform/contributions` (contribution token, consent, allowed scope)
-- `GET /api/platform/invitations/:token` (strictly read-only, safe preview)
-- `POST /api/platform/invitations/:token/respond` (explicit join/decline)
-
-Use `POST /api/platform/demo/reset` with the organizer cookie to remove only the
-fictional workspace's members/signals/searches/circles/invitations and re-seed its
-fixtures. Live data, the base directory and contribution capabilities are
-preserved. Live sessions receive 403. The seed search ID is
-`demo-search-robotics`; Track B can save new searches through `PlatformPort`.
-
-Creator membership starts at one. Each distinct accepted invite increases the
-count once. A circle becomes active only with enough accepted members and a
-confirmed first activity. Invitation tokens are 32 random bytes, stored only as
-HMAC-SHA256 hashes, and returned once during circle creation. They expire after
-24 hours. GET derives expiry and returns 410 without persisting an expiry change,
-so link previews never write. Forwarded invitation links prove possession of a
-capability, not personal identity. Roster name visibility is separate consent.
-
-## Verification
+## Verify
 
 ```bash
-npm test
+npm test                # 198 tests: routes, Convex invariants, intelligence, UI
 npx tsc --noEmit
 npm run build
-# Requires the local Convex process; resets ONLY fictional data before/after:
-npm run platform:smoke
+npm run platform:smoke  # needs the local Convex backend running
 ```
 
-Tests call route handlers directly without starting Next, using a transactional
-fixture adapter. `convex-test` additionally exercises persisted invariants,
-withdrawn/missing evidence, revoked capabilities, uniqueness, capacity and reset
-isolation. The smoke command exercises actual local Convex internal functions
-and verifies that anonymous private reads fail.
+## License
 
-## Architecture and integration
-
-The application alias is `@/*` → `src/*`. Contracts and JSON fixtures in
-`src/shared/` are frozen and unchanged. Track B imports exactly these public
-exports from `src/server/platform/public.ts`:
-
-```ts
-requireOrganizer(request: Request): Promise<Viewer>
-getPlatformPort(): PlatformPort
-```
-
-Routes in `src/app/api/platform/` call `src/server/platform/` modules. Production
-data access uses `ConvexHttpClient` with server-only admin auth. All deployable
-Convex functions are internal; there are no public private-table functions for
-browser clients to bypass session checks. Each write performs read/check/write
-in one serializable mutation. Domain functions also enforce organizer ownership,
-workspace/data mode, approved signals, member consent, confirmed community
-membership and source permissions. Searches are validated at save time and
-revalidated against current evidence before circle creation.
-
-`convex/platform_store.ts` is the typed schema adapter. Domain operations live in
-`convex/platform_model.ts`; the memory adapter runs the same operations with
-serialized copy-on-write transactions and rollback. There is one authoritative
-store per deployment. Audit records contain action/object IDs and status, never
-raw tokens or contributed statements.
-
-| Track | Owned paths                                                                                         |
-| ----- | --------------------------------------------------------------------------------------------------- |
-| A     | Discovery/community pages, shell, root layout/styles, `tests/discovery-ui/`                         |
-| B     | `src/app/api/intelligence/`, `src/server/intelligence/`, `tests/intelligence/`                      |
-| C     | `src/app/api/platform/`, `src/server/platform/`, `convex/`, `tests/platform/`, scripts/root tooling |
-| D     | Circle/invitation/contribution pages and UI, `tests/circle-ui/`                                     |
-
-For deployment, configure a Convex backend and server-only admin/deployment key,
-set the env variables above, deploy Convex functions, seed intentionally, and run
-Next behind HTTPS. `npm run convex:deploy` targets the configured deployment;
-`npm run start` serves a production Next build. No deployment or merge is
-performed by this branch.
-
-Hackathon limitations: one password-protected organizer per workspace;
-process-local login throttling; manual link delivery; pending contributions need
-an organizer review workflow from the later context/import track; no onboarding,
-leave/removal API or production identity verification in this Track C slice.
+[MIT](LICENSE) — built for the Grok Bot Community Engineering London Hackathon.
