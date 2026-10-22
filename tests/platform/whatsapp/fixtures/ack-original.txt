@@ -1,0 +1,5 @@
+    const sendMessageAck = async (node, errorCode) => {
+        const stanza = buildAckStanza(node, errorCode, authState.creds.me.id);
+        logger.debug({ recv: { tag: node.tag, attrs: node.attrs }, sent: stanza.attrs }, 'sent ack');
+        await sendNode(stanza);
+    };

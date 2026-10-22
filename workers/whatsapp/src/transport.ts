@@ -76,8 +76,12 @@ export class WhatsAppTransport {
       logger: pino({ level: "silent" }),
       browser: Browsers.macOS("Chrome"),
       syncFullHistory: true,
+      qrTimeout: 20000,
       markOnlineOnConnect: false,
       getMessage: async () => undefined,
+    });
+    socket.ws.on('CB:notification,type:companion_reg_refresh', () => {
+      console.log('WhatsApp requested fresh pairing registration material');
     });
     this.socket = socket;
     this.opened = false;
@@ -90,7 +94,7 @@ export class WhatsAppTransport {
         void this.event({
           type: "qr",
           qr: update.qr,
-          expiresAt: Date.now() + 55000,
+          expiresAt: Date.now() + 18000,
         }).catch(() => this.fail());
       if (update.connection === "open") {
         this.opened = true;

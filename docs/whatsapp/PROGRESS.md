@@ -20,3 +20,5 @@ Ruling: raw text deletion is bounded to 100 expired records per minute and may l
 Remaining: plan task 1 live-account/Cognee verification; completion of tasks 2/3 (consent provenance, edit/delete, checkpoints); tasks 5/6/7 extraction, review, index lifecycle, purge and deployment. No push, merge or external deployment performed.
 Verification: npm test passed 214 tests across 26 files; root TypeScript and worker TypeScript passed; production Next build passed with the new API and /settings/connections routes. Git diff whitespace check passed. Real QR handshake observed, no selected-group account import verified yet.
 Provider finding: the Desktop browser descriptor repeatedly closed with provider code 428 before a QR. A fresh Chrome-descriptor socket produced a QR immediately. Switched the adapter to the observed working Chrome descriptor; no pairing payload was logged.
+
+Pairing repair: backported upstream #2749 and #2765 into pinned rc14 with guarded install/start verification. Four regression cases failed before the fix and pass after it. User confirmed successful phone linking. Full suite: 218 passed; both TypeScript checks passed.

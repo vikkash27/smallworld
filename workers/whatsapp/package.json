@@ -7,7 +7,9 @@
   },
   "scripts": {
     "start": "tsx --env-file=.env.local src/runner.ts",
-    "check": "tsc --noEmit -p tsconfig.json"
+    "check": "tsc --noEmit -p tsconfig.json",
+    "postinstall": "node scripts/pairing-patch.mjs",
+    "prestart": "node scripts/pairing-patch.mjs"
   },
   "dependencies": {
     "baileys": "7.0.0-rc14",
