@@ -9,6 +9,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    setupFiles: ["tests/discovery-ui/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
   },
 });
