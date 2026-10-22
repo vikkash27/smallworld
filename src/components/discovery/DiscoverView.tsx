@@ -95,7 +95,7 @@ export function DiscoverView(props: {
   );
 
   const loading = state.kind === "loading";
-  const searchingIn = namesFor(bootstrap.allowedCommunityIds, bootstrap);
+
   const responseMode =
     state.kind === "ready" || state.kind === "empty" ? state.response.dataMode : null;
   const isSample = bootstrap.dataMode === "sample" || responseMode === "sample";
@@ -212,25 +212,7 @@ export function DiscoverView(props: {
             Sample context
           </span>
         ) : null}
-        {searchingIn.length > 0 ? (
-          <span style={{ marginLeft: "auto" }}>Searching in: {searchingIn.join(" · ")}</span>
-        ) : null}
       </div>
-
-      {state.kind === "idle" ? (
-        <div
-          style={{
-            marginTop: 48,
-            padding: 32,
-            border: "1px dashed #DEDEE5",
-            borderRadius: 12,
-            color: "#55555D",
-            fontSize: 15,
-          }}
-        >
-          Describe a goal. We&apos;ll suggest up to three people from your communities, and why.
-        </div>
-      ) : null}
 
       {state.kind === "ready" ? (
         <ReadyResults
