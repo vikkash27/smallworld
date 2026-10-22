@@ -10,6 +10,8 @@ const listeners = new Set<() => void>();
 
 function readTheme(): HeroTheme {
   try {
+    const param = new URLSearchParams(window.location.search).get("theme");
+    if (param === "light" || param === "dark") return param;
     return localStorage.getItem(STORAGE_KEY) === "light" ? "light" : "dark";
   } catch {
     return "dark";
