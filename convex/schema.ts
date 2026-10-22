@@ -93,9 +93,25 @@ const searchResult = v.object({
   message: nullableString,
 });
 
-// Indexes are not unique constraints: future writes must check each relevant
-// index with .unique() before insert inside the same atomic mutation.
+// Indexes are not unique constraints. Domain writes check uniqueness inside
+// the same atomic mutation before inserting memberships and invitations.
 export default defineSchema({
+  workspaces: defineTable({
+    id: v.string(),
+    dataMode,
+    organizerId: v.string(),
+    allowedCommunityIds: v.array(v.string()),
+  }).index("by_domain_id", ["id"]),
+  contribution_capabilities: defineTable({
+    ...scopedRecord,
+    tokenHash: v.string(),
+    permittedCommunityIds: v.array(v.string()),
+    expiresAt: v.string(),
+    revoked: v.boolean(),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"])
+    .index("by_token_hash", ["tokenHash"]),
   communities: defineTable({
     id: v.string(),
     name: v.string(),
@@ -122,13 +138,18 @@ export default defineSchema({
       v.literal("unknown"),
       v.literal("unavailable"),
     ),
-  }).index("by_domain_id", ["id"]),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"]),
   memberships: defineTable({
     ...scopedRecord,
     memberId: v.string(),
     communityId: v.string(),
     confirmed: v.boolean(),
-  }).index("by_member_community", ["memberId", "communityId"]),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"])
+    .index("by_member_community", ["memberId", "communityId"]),
   sources: defineTable({
     ...scopedRecord,
     sourceType: v.string(),
@@ -139,7 +160,9 @@ export default defineSchema({
     redactedContent: nullableString,
     occurredAt: nullableString,
     createdAt: v.string(),
-  }).index("by_domain_id", ["id"]),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"]),
   signals: defineTable({
     ...scopedRecord,
     memberId: v.string(),
@@ -158,6 +181,7 @@ export default defineSchema({
     validUntil: nullableString,
   })
     .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"])
     .index("by_member", ["memberId"]),
   signal_evidence: defineTable({
     ...scopedRecord,
@@ -173,6 +197,7 @@ export default defineSchema({
     evidenceClass,
   })
     .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"])
     .index("by_signal", ["signalId"]),
   searches: defineTable({
     ...scopedRecord,
@@ -181,7 +206,9 @@ export default defineSchema({
     goal: v.string(),
     communityIds: v.array(v.string()),
     result: searchResult,
-  }).index("by_domain_id", ["id"]),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"]),
   circles: defineTable({
     ...scopedRecord,
     creatorId: v.string(),
@@ -196,7 +223,9 @@ export default defineSchema({
     acceptedCount: v.number(),
     status: circleStatus,
     activityConfirmed: v.boolean(),
-  }).index("by_domain_id", ["id"]),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"]),
   circle_members: defineTable({
     ...scopedRecord,
     circleId: v.string(),
@@ -204,7 +233,10 @@ export default defineSchema({
     role: v.union(v.literal("host"), v.literal("member")),
     joinedAt: v.string(),
     showOnRoster: v.boolean(),
-  }).index("by_circle_member", ["circleId", "memberId"]),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"])
+    .index("by_circle_member", ["circleId", "memberId"]),
   invitations: defineTable({
     ...scopedRecord,
     circleId: v.string(),
@@ -214,6 +246,7 @@ export default defineSchema({
     expiresAt: v.string(),
   })
     .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"])
     .index("by_circle_intended_member", ["circleId", "intendedMemberId"])
     .index("by_token_hash", ["tokenHash"]),
   audit_events: defineTable({
@@ -224,5 +257,7 @@ export default defineSchema({
     objectType: v.string(),
     status: v.string(),
     occurredAt: v.string(),
-  }),
+  })
+    .index("by_domain_id", ["id"])
+    .index("by_workspace_mode", ["workspaceId", "dataMode"]),
 });
