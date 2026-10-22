@@ -91,7 +91,7 @@ export function CommunityPanel({ community, onClose }: { community: Community; o
               href={community.publicUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center"
+              className="inline-flex min-h-11 max-w-full items-center [overflow-wrap:anywhere]"
             >
               {publicUrlLabel(community.publicUrl)}
             </a>
