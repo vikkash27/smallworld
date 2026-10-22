@@ -16,8 +16,8 @@ Nothing outside those paths is touched. Imports of the shared contract are relat
 |---|---|
 | `/circles/new`, `/circles`, `/circles/[id]`, `/invite/[token]` | `/contribute/[token]` (P1) |
 | Mock client that enforces the PRD rules; live client for C's API | Login screen (nobody owns it, see below) |
-| Per-member avatars (see Licence) | Live client run against C's real API |
-| 49 unit tests, strict typecheck, `next build` | |
+| Initials circles for every member, as in the mockups | Live client run against C's real API |
+| 42 unit tests, strict typecheck, `next build` on the baseline | Procedural avatars (deferred, see below) |
 
 Verified in a real browser on a throwaway Next 15 / React 19 harness: create circle → copy links → two recipients join on a 360px phone view → creator view updates → confirm activity → ACTIVE; plus expired, invalid, empty and missing-search states and no horizontal overflow at 360px. **Not verified against C's backend, because it doesn't exist yet.**
 
@@ -25,23 +25,21 @@ Mock mode is the default (`NEXT_PUBLIC_DATA_MODE` unset or `mock`) and shows a v
 
 ## Needs from C (shared files)
 
-1. **Dependencies.** Add `@bible-strong/avatar-react@0.1.0` and `@bible-strong/avatar-core@0.1.0`; both need React 19 as a peer. Tests use `vitest`.
-2. **Licence (decision, see below).**
-3. **Endpoint examples and invitation URL shape**, ideally with the real response for each endpoint in the PRD table.
-4. **Send `Cache-Control: no-store` on `/api/platform/invitations/*` and `/invite/*`.** Metadata already sets `noindex` and `referrer: no-referrer`.
-5. **`APP_BASE_URL` must be reachable from a phone** (deployed URL or tunnel). If it is `localhost`, the two-phone demo cannot work.
+1. **No new dependencies.** D adds nothing to `package.json`; it builds on the baseline as is.
+2. **Endpoint examples and invitation URL shape**, ideally with the real response for each endpoint in the PRD table.
+3. **Send `Cache-Control: no-store` on `/api/platform/invitations/*` and `/invite/*`.** Metadata already sets `noindex` and `referrer: no-referrer`.
+4. **`APP_BASE_URL` must be reachable from a phone** (deployed URL or tunnel). If it is `localhost`, the two-phone demo cannot work.
 
 ## Needs from A
 
 - **Hide the organiser nav on `/invite/*` and `/contribute/*`.** D may not add a layout, and the recipient page should be the phone view in the mockup, not the organiser shell.
 - URL-encode `searchId` in the `/circles/new?searchId=` link.
-- `MemberAvatar` can be reused for the discovery person cards (`src/components/circles/MemberAvatar.tsx`); ask before importing across ownership.
 
-## Licence: needs a team decision
+## Avatars: deferred on purpose
 
-The avatars come from **Bible Strong Avatar Lab** (github.com/smontlouis/bible-strong-avatar-lab), published as `@bible-strong/avatar-react` and `avatar-core`, both **AGPL-3.0-only**. Shipping them makes the whole app AGPL-3.0. The hackathon allows AGPL-3.0, so that is fine **only if C sets the root `LICENSE` to AGPL-3.0**. If the team prefers MIT or Apache-2.0, drop the two dependencies and follow `src/ui/circles/avatars/NOTICE.md` (a two-line change in `MemberAvatar.tsx`). The library is isolated in one file, `avatar-lab.tsx`. This is not xAI or Grok software.
+An earlier version drew each member with Bible Strong Avatar Lab (`@bible-strong/avatar-react` and `avatar-core`). Those packages are **AGPL-3.0-only**, and the repo is MIT, so they were removed to keep the branch mergeable. Members now appear as initials circles from the mockups. A member who hasn't agreed to be named is drawn as a neutral "?".
 
-Avatar privacy rule: someone who hasn't agreed to be named is drawn as a neutral "?" placeholder, never a distinctive avatar. Colours are assigned per circle so no two members look alike. Cost: about 57 kB on the pages that use avatars.
+To bring the avatars back, C would have to switch the root `LICENSE` and `package.json` to AGPL-3.0 (an allowed submission licence) and add the two packages. The avatar version is in git history on this branch (commit `5003660`).
 
 ## Flaws found in the spec, and what this code does
 

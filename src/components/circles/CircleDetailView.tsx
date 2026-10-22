@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CircleDetail } from '../../shared/contracts';
-import { assignVariants } from '../../ui/circles/avatars/avatar-seed';
 import { getCirclesClient } from '../../ui/circles/client';
 import { messageFor, toApiError } from '../../ui/circles/errors';
 import type { ApiError } from '../../ui/circles/errors';
@@ -67,11 +66,6 @@ export default function CircleDetailView() {
   }, [id, polling, client]);
 
   const waiting = useMemo(() => (circle ? circle.invitations.filter((i) => i.status !== 'accepted') : []), [circle]);
-  // One distinct look per person in this circle, shared by every list on the page.
-  const variants = useMemo(
-    () => (circle ? assignVariants([circle.host.id, ...circle.invitations.map((i) => i.member.id)]) : undefined),
-    [circle],
-  );
 
   if (fatal) {
     return (
@@ -111,7 +105,7 @@ export default function CircleDetailView() {
         </p>
       ) : null}
 
-      {hasLinks ? <InvitationLinks links={links} invitations={circle.invitations} variants={variants} /> : null}
+      {hasLinks ? <InvitationLinks links={links} invitations={circle.invitations} /> : null}
 
       <ActivityPanel
         circle={circle}
@@ -130,7 +124,7 @@ export default function CircleDetailView() {
           {circle.roster.map((m) => (
             <li key={m.id} className={s.row}>
               {/* A member who hasn't agreed to be named gets the neutral placeholder, never a distinctive avatar. */}
-              <MemberAvatar seed={m.displayName ? m.id : null} initials={m.initials} variants={variants} />
+              <MemberAvatar initials={m.initials} anonymous={!m.displayName} />
               <span className={s.rowName}>{m.displayName ?? 'Member (name hidden)'}</span>
               <span className={s.rowRole}>{m.role === 'host' ? 'Host' : 'Joined'}</span>
             </li>
@@ -143,7 +137,7 @@ export default function CircleDetailView() {
             <ul className={s.list} aria-label="Invitations not yet accepted">
               {waiting.map((i) => (
                 <li key={i.id} className={s.row}>
-                  <MemberAvatar seed={i.member.id} initials={i.member.initials} variants={variants} />
+                  <MemberAvatar initials={i.member.initials} />
                   <span className={s.rowName}>{i.member.displayName}</span>
                   <span className={s.rowRole}>{WAITING_LABEL[i.status]}</span>
                 </li>

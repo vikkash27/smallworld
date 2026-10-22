@@ -1,7 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
-import { assignVariants } from '../../ui/circles/avatars/avatar-seed';
+import { useId, useState } from 'react';
 import type { SearchPreviewResponse } from '../../shared/contracts';
 import { clampMinimum, hasErrors, LIMITS, validateCircleForm } from '../../ui/circles/validation';
 import type { CircleFormValues, FormErrors } from '../../ui/circles/validation';
@@ -29,7 +28,6 @@ export function CircleForm({
   onSubmit: (values: CircleFormValues) => void;
 }) {
   const id = useId();
-  const variants = useMemo(() => assignVariants(preview.discovery.people.map((p) => p.member.id)), [preview]);
   const [v, setV] = useState<CircleFormValues>(initial);
   const [errors, setErrors] = useState<FormErrors>({});
   const [attempted, setAttempted] = useState(false);
@@ -103,7 +101,7 @@ export function CircleForm({
           return (
             <label key={p.member.id} className={s.check}>
               <input type="checkbox" checked={checked} disabled={submitting} onChange={() => toggle(p.member.id)} />
-              <MemberAvatar seed={p.member.id} initials={p.member.initials} size={40} variants={variants} />
+              <MemberAvatar initials={p.member.initials} size={40} />
               <span className={s.checkText}>
                 <span className={s.checkName}>{p.member.displayName}</span>
                 <span className={s.checkSub}>

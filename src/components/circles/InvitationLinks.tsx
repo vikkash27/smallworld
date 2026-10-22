@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import type { InvitationSummary, MemberSummary } from '../../shared/contracts';
-import type { AvatarVariant } from '../../ui/circles/avatars/avatar-seed';
 import type { InvitationLink } from '../../ui/circles/links-cache';
 import { MemberAvatar } from './MemberAvatar';
 import s from './circles.module.css';
@@ -24,17 +23,7 @@ async function copyText(text: string, input: HTMLInputElement | null): Promise<b
   }
 }
 
-function LinkRow({
-  link,
-  name,
-  member,
-  variants,
-}: {
-  link: InvitationLink;
-  name: string;
-  member: MemberSummary | null;
-  variants?: ReadonlyMap<string, AvatarVariant>;
-}) {
+function LinkRow({ link, name, member }: { link: InvitationLink; name: string; member: MemberSummary | null }) {
   const [status, setStatus] = useState<'idle' | 'copied' | 'manual'>('idle');
   const [input, setInput] = useState<HTMLInputElement | null>(null);
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -42,7 +31,7 @@ function LinkRow({
   return (
     <li className={s.linkRow}>
       <div className={s.linkWhoRow}>
-        <MemberAvatar seed={member?.id ?? link.memberId} initials={member?.initials ?? null} size={36} variants={variants} />
+        <MemberAvatar initials={member?.initials ?? null} size={36} />
         <p className={s.linkWho}>{name}</p>
       </div>
       <div className={s.linkInputRow}>
@@ -78,15 +67,7 @@ function LinkRow({
   );
 }
 
-export function InvitationLinks({
-  links,
-  invitations,
-  variants,
-}: {
-  links: InvitationLink[];
-  invitations: InvitationSummary[];
-  variants?: ReadonlyMap<string, AvatarVariant>;
-}) {
+export function InvitationLinks({ links, invitations }: { links: InvitationLink[]; invitations: InvitationSummary[] }) {
   if (links.length === 0) return null;
   const memberFor = (l: InvitationLink): MemberSummary | null =>
     (invitations.find((i) => i.id === l.invitationId) ?? invitations.find((i) => i.member.id === l.memberId))?.member ?? null;
@@ -100,7 +81,7 @@ export function InvitationLinks({
       <ul className={s.list}>
         {links.map((l) => {
           const member = memberFor(l);
-          return <LinkRow key={l.invitationId} link={l} name={member?.displayName ?? 'Invitee'} member={member} variants={variants} />;
+          return <LinkRow key={l.invitationId} link={l} name={member?.displayName ?? 'Invitee'} member={member} />;
         })}
       </ul>
     </section>

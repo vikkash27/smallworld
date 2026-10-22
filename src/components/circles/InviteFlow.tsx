@@ -101,8 +101,7 @@ export default function InviteFlow() {
     <>
       <DataBadge mode={client.mode} dataMode={view.dataMode} />
       <div className={s.hostRow}>
-        {/* InvitationView carries no host id, so the host is drawn from their display name. */}
-        <MemberAvatar seed={`host:${view.hostDisplayName}`} initials={view.hostDisplayName.slice(0, 2).toUpperCase()} size={40} />
+        <MemberAvatar initials={view.hostDisplayName.slice(0, 2).toUpperCase()} size={40} />
         <p className={s.panelMeta} style={{ margin: 0 }}>An invitation from {view.hostDisplayName}</p>
       </div>
       <h1 className={s.titleSm}>Build something together.</h1>

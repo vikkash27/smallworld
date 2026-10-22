@@ -80,8 +80,6 @@ textarea.input { min-height: 96px; resize: vertical; }
   width: 44px; height: 44px; border-radius: 50%; flex: none; display: grid; place-items: center;
   background: var(--d-fg); color: var(--d-bg); font-size: 13px; font-weight: 700;
 }
-.avatarFrame { display: grid; place-items: center; flex: none; border-radius: 50%; overflow: hidden; }
-.avatarFrame > * { max-width: 100%; max-height: 100%; }
 .avatarGhost { background: transparent; color: var(--d-muted); border: 1.5px dashed var(--d-border); }
 .rowName { font-weight: 700; font-size: 18px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .rowRole { font-size: 14px; color: var(--d-muted); }
