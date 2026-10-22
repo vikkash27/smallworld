@@ -192,8 +192,8 @@
 }
 
 /*
- * Landing hero (src/components/hero). Dark stage inset under the light header;
- * near-black, faint blueprint grid, brand glow, floating community/member tiles.
+ * Landing hero (src/components/hero). Pale card under the light header;
+ * faint blueprint grid, brand glow, floating community logos in glass circles.
  */
 @layer components {
   .sw-hero {
@@ -205,8 +205,10 @@
     margin: 16px auto 0;
     min-height: max(560px, min(820px, calc(100svh - 112px)));
     border-radius: 20px;
-    background: #0a0a0c;
-    color: #ffffff;
+    background: linear-gradient(180deg, #ffffff, #f4f4f7);
+    /* Inset ring rather than a border, so the box size stays identical. */
+    box-shadow: inset 0 0 0 1px #dedee5;
+    color: #111113;
     display: grid;
     place-items: center;
     padding: 96px 24px;
@@ -230,8 +232,8 @@
     inset: 0;
     z-index: -2;
     background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.055) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.055) 1px, transparent 1px);
+      linear-gradient(to right, rgb(17 17 19 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(17 17 19 / 0.06) 1px, transparent 1px);
     background-size: 64px 64px;
     background-position: center center;
     mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 30%, transparent 100%);
@@ -245,7 +247,7 @@
     width: min(900px, 120%);
     aspect-ratio: 2 / 1;
     transform: translate(-50%, -50%);
-    background: radial-gradient(closest-side, rgb(67 52 245 / 0.32), rgb(67 52 245 / 0.08) 60%, transparent);
+    background: radial-gradient(closest-side, rgb(67 52 245 / 0.14), rgb(67 52 245 / 0.04) 60%, transparent);
     pointer-events: none;
   }
 
@@ -272,7 +274,7 @@
     max-width: 560px;
     font-size: clamp(16px, 0.4vw + 15px, 19px);
     line-height: 1.55;
-    color: #a3a3ad;
+    color: #55555d;
     text-wrap: pretty;
   }
 
@@ -282,8 +284,13 @@
     padding: 0 28px;
     box-shadow:
       0 0 0 1px rgb(255 255 255 / 0.12) inset,
-      0 10px 40px -8px rgb(67 52 245 / 0.7);
+      0 10px 32px -10px rgb(67 52 245 / 0.5);
     transition: background-color 150ms ease, transform 150ms ease;
+  }
+
+  /* .on-brand's white focus ring would vanish on the pale panel. */
+  .sw-hero-cta:focus-visible {
+    outline-color: #4334f5;
   }
 
   .sw-hero-cta:hover {
@@ -314,44 +321,37 @@
     animation: sw-hero-float 9s ease-in-out var(--delay) infinite;
   }
 
+  /* Glass circle holding a community logo. */
   .sw-hero-tile-face {
     display: grid;
     place-items: center;
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    border-radius: 22%;
-    font-weight: 700;
-    font-size: calc(var(--size) * 0.3);
-    letter-spacing: -0.02em;
-    background: linear-gradient(160deg, #26262c, #141418);
-    border: 1px solid rgb(255 255 255 / 0.09);
-    color: #e8e8ee;
-    box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.8);
-  }
-
-  .sw-hero-tile[data-kind="community"] .sw-hero-tile-face {
-    background: linear-gradient(160deg, #5446ff, #3022d6);
-    border-color: rgb(255 255 255 / 0.18);
-    color: #ffffff;
-    box-shadow: 0 18px 44px -12px rgb(67 52 245 / 0.65);
-  }
-
-  /* Member tiles hold an avatar circle, like MemberAvatar. */
-  .sw-hero-tile[data-kind="member"] .sw-hero-tile-face::before {
-    content: "";
-    position: absolute;
-    inset: 16%;
     border-radius: 50%;
-    background: #f4f4f7;
-    z-index: -1;
+    background: rgb(255 255 255 / 0.55);
+    backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    border: 1px solid rgb(17 17 19 / 0.08);
+    box-shadow:
+      0 16px 32px -14px rgb(17 17 19 / 0.22),
+      inset 0 1px 0 rgb(255 255 255 / 0.7);
   }
 
-  .sw-hero-tile[data-kind="member"] .sw-hero-tile-face {
-    position: relative;
-    isolation: isolate;
-    color: #111113;
-    font-size: calc(var(--size) * 0.24);
+  .sw-hero-tile-face img {
+    width: 68%;
+    height: 68%;
+    object-fit: contain;
+    border-radius: 50%;
+  }
+
+  /* White-mark logos need a dark glass circle to stay readable. */
+  .sw-hero-tile[data-kind="dark"] .sw-hero-tile-face {
+    background: rgb(17 17 19 / 0.72);
+    border-color: rgb(17 17 19 / 0.2);
+    box-shadow:
+      0 16px 32px -14px rgb(17 17 19 / 0.35),
+      inset 0 1px 0 rgb(255 255 255 / 0.15);
   }
 
   .sw-hero-tile[data-depth="0"] {
@@ -378,100 +378,12 @@
     }
   }
 
-  /* Dark/light toggle, top-right of the panel. Absolutely placed, so switching never moves content. */
-  .sw-hero-theme {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 1;
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    box-sizing: border-box;
-    border-radius: 12px;
-    border: 1px solid rgb(255 255 255 / 0.12);
-    background: rgb(255 255 255 / 0.06);
-    color: #a3a3ad;
-    cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
-  }
-
-  .sw-hero-theme:hover {
-    background: rgb(255 255 255 / 0.12);
-    color: #ffffff;
-  }
-
-  /* Light variant: a pale card inside the light app, same layout and radii. */
-  .sw-hero--light {
-    background: linear-gradient(180deg, #ffffff, #f4f4f7);
-    color: #111113;
-    /* Inset ring rather than a border, so the box size is identical in both themes. */
-    box-shadow: inset 0 0 0 1px #dedee5;
-  }
-
-  .sw-hero--light .sw-hero-grid {
-    background-image:
-      linear-gradient(to right, rgb(17 17 19 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(17 17 19 / 0.06) 1px, transparent 1px);
-  }
-
-  .sw-hero--light .sw-hero-glow {
-    background: radial-gradient(closest-side, rgb(67 52 245 / 0.14), rgb(67 52 245 / 0.04) 60%, transparent);
-  }
-
-  .sw-hero--light .sw-hero-sub {
-    color: #55555d;
-  }
-
-  .sw-hero--light .sw-hero-cta {
-    box-shadow:
-      0 0 0 1px rgb(255 255 255 / 0.12) inset,
-      0 10px 32px -10px rgb(67 52 245 / 0.5);
-  }
-
-  /* .on-brand's white focus ring would vanish on the pale panel. */
-  .sw-hero--light .sw-hero-cta:focus-visible {
-    outline-color: #4334f5;
-  }
-
-  .sw-hero--light .sw-hero-tile-face {
-    background: linear-gradient(160deg, #ffffff, #f4f4f7);
-    border-color: #dedee5;
-    color: #111113;
-    box-shadow: 0 16px 32px -14px rgb(17 17 19 / 0.22);
-  }
-
-  .sw-hero--light .sw-hero-tile[data-kind="member"] .sw-hero-tile-face::before {
-    background: #f0f0f4;
-  }
-
-  .sw-hero--light .sw-hero-tile[data-kind="community"] .sw-hero-tile-face {
-    background: linear-gradient(160deg, #5446ff, #3022d6);
-    border-color: rgb(255 255 255 / 0.18);
-    color: #ffffff;
-    box-shadow: 0 16px 36px -14px rgb(67 52 245 / 0.45);
-  }
-
-  .sw-hero--light .sw-hero-theme {
-    border-color: #dedee5;
-    background: #ffffff;
-    color: #55555d;
-  }
-
-  .sw-hero--light .sw-hero-theme:hover {
-    background: #f0f0f4;
-    color: #111113;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .sw-hero-tile {
       animation: none;
     }
 
-    .sw-hero-cta,
-    .sw-hero-theme {
+    .sw-hero-cta {
       transition: none;
     }
   }
@@ -484,10 +396,6 @@
     .sw-hero-tile {
       width: calc(var(--size) * 0.7);
       height: calc(var(--size) * 0.7);
-    }
-
-    .sw-hero-tile-face {
-      font-size: calc(var(--size) * 0.21);
     }
   }
 
@@ -513,20 +421,14 @@
       top: 9%;
     }
 
-    /* Clear of the theme toggle in the top-right corner. */
     .sw-hero-tile:nth-child(4) {
-      left: 74%;
-      top: 7%;
-    }
-
-    .sw-hero-theme {
-      top: 12px;
-      right: 12px;
-    }
-
-    .sw-hero-tile:nth-child(6) {
       left: 86%;
-      top: 94%;
+      top: 9%;
+    }
+
+    .sw-hero-tile:nth-child(5) {
+      left: 86%;
+      top: 92%;
     }
   }
 

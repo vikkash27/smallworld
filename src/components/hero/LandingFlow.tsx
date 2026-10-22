@@ -6,7 +6,6 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { DiscoverScreen } from "@/components/discovery/DiscoverScreen";
 import { loadBootstrap } from "@/ui/discovery/client";
 import { FloatingTiles } from "./FloatingTiles";
-import { HeroThemeToggle, useHeroTheme } from "./HeroThemeToggle";
 
 type Session = "loading" | "ready" | "unauthenticated";
 
@@ -18,7 +17,6 @@ const DISCOVER_ID = "discover";
  */
 export function LandingFlow() {
   const [session, setSession] = useState<Session>("loading");
-  const [heroTheme, setHeroTheme] = useHeroTheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -50,14 +48,10 @@ export function LandingFlow() {
 
   return (
     <>
-      <section
-        className={heroTheme === "light" ? "sw-hero sw-hero--light" : "sw-hero"}
-        aria-labelledby="hero-title"
-      >
+      <section className="sw-hero" aria-labelledby="hero-title">
         <div className="sw-hero-grid" aria-hidden="true" />
         <div className="sw-hero-glow" aria-hidden="true" />
         <FloatingTiles />
-        <HeroThemeToggle theme={heroTheme} onChange={setHeroTheme} />
         <div className="sw-hero-content">
           <h1 id="hero-title" className="sw-hero-title">
             Find your people.

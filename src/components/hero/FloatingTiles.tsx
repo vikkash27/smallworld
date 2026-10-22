@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
 
 type Tile = {
-  label: string;
-  kind: "community" | "member";
+  alt: string;
+  src: string;
+  /** White-mark logos need a dark glass circle to stay visible on the light hero. */
+  dark?: boolean;
   /** Position as % of the hero; tiles sit around the headline, not on it. */
   x: number;
   y: number;
@@ -15,16 +17,12 @@ type Tile = {
   core?: boolean;
 };
 
-// UM, KC, NO are communities in the sample workspace; the rest are member initials.
 const TILES: Tile[] = [
-  { label: "UM", kind: "community", x: 12, y: 18, size: 76, rotate: -8, depth: 2, delay: 0, core: true },
-  { label: "AO", kind: "member", x: 6, y: 56, size: 56, rotate: 6, depth: 1, delay: 1.4 },
-  { label: "LM", kind: "member", x: 20, y: 80, size: 48, rotate: -4, depth: 0, delay: 2.6 },
-  { label: "KC", kind: "community", x: 84, y: 14, size: 64, rotate: 9, depth: 1, delay: 0.8, core: true },
-  { label: "VS", kind: "member", x: 93, y: 60, size: 44, rotate: -10, depth: 0, delay: 2.1 },
-  { label: "NO", kind: "community", x: 82, y: 76, size: 80, rotate: -6, depth: 2, delay: 1.1, core: true },
-  { label: "NS", kind: "member", x: 34, y: 8, size: 40, rotate: 12, depth: 0, delay: 3.2 },
-  { label: "EK", kind: "member", x: 64, y: 90, size: 46, rotate: 5, depth: 1, delay: 0.4 },
+  { alt: "Unicorn Mafia", src: "/communities/unicorn-mafia.png", x: 12, y: 18, size: 84, rotate: -8, depth: 2, delay: 0, core: true },
+  { alt: "Hackradar", src: "/communities/hackradar.png", x: 6, y: 58, size: 60, rotate: 6, depth: 1, delay: 1.4 },
+  { alt: "Hack Nation", src: "/communities/hack-nation.png", x: 33, y: 9, size: 48, rotate: 10, depth: 0, delay: 3.2 },
+  { alt: "basedcollective", src: "/communities/basedcollective.png", dark: true, x: 84, y: 14, size: 66, rotate: 9, depth: 1, delay: 0.8, core: true },
+  { alt: "accelerateME", src: "/communities/accelerateme.png", x: 82, y: 74, size: 82, rotate: -6, depth: 2, delay: 1.1, core: true },
 ];
 
 export function FloatingTiles() {
@@ -32,9 +30,9 @@ export function FloatingTiles() {
     <div className="sw-hero-tiles" aria-hidden="true">
       {TILES.map((t) => (
         <div
-          key={t.label}
+          key={t.alt}
           className="sw-hero-tile"
-          data-kind={t.kind}
+          data-kind={t.dark ? "dark" : "light"}
           data-depth={t.depth}
           data-core={t.core ? "" : undefined}
           style={
@@ -47,7 +45,10 @@ export function FloatingTiles() {
             } as CSSProperties
           }
         >
-          <span className="sw-hero-tile-face">{t.label}</span>
+          <span className="sw-hero-tile-face">
+            {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size decorative logo */}
+            <img src={t.src} alt="" width={Math.round(t.size * 0.68)} height={Math.round(t.size * 0.68)} />
+          </span>
         </div>
       ))}
     </div>
