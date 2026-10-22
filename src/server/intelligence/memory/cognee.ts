@@ -70,7 +70,7 @@ function recallText(raw: string): string {
   }
 }
 
-function readConfig(env: NodeJS.ProcessEnv): {
+function readConfig(env: Record<string, string | undefined>): {
   configured: boolean;
   base: string;
   apiKey: string;
@@ -84,7 +84,7 @@ function readConfig(env: NodeJS.ProcessEnv): {
 }
 
 export function createCogneeTransport(
-  env: NodeJS.ProcessEnv,
+  env: Record<string, string | undefined>,
   fetchImpl: typeof fetch = fetch,
 ): CogneeTransport {
   const { configured, base, apiKey, tenantId } = readConfig(env);

@@ -9,7 +9,7 @@ const indexedDatasets = new Set<string>();
 export interface DiscoverDeps {
   requireOrganizer: (request: Request) => Promise<Viewer>;
   getPlatformPort: () => PlatformPort;
-  env?: NodeJS.ProcessEnv;
+  env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
 }
 

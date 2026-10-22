@@ -57,7 +57,7 @@ export interface OpenAIRerankClient {
 }
 
 export function createOpenAIRerankClient(
-  env: NodeJS.ProcessEnv,
+  env: Record<string, string | undefined>,
   fetchImpl: typeof fetch = globalThis.fetch,
 ): OpenAIRerankClient {
   const apiKey = readNonBlank(env.OPENAI_API_KEY);

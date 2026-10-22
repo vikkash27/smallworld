@@ -1,14 +1,37 @@
 {
   "name": "smallworld",
+  "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
   "scripts": {
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run --passWithNoTests",
+    "convex:dev": "convex dev --local",
+    "convex:deploy": "convex deploy",
+    "seed": "npx convex run seed:run"
+  },
+  "dependencies": {
+    "convex": "1.31.7",
+    "lucide-react": "1.61.0",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
-  }
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "postcss": "8.5.31",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  },
+  "type": "module"
 }
