@@ -110,7 +110,7 @@ export const saveSearchSchema = z
               })
               .strict(),
           )
-          .max(3),
+          .max(12),
         communities: z
           .array(
             z
