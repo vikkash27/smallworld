@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DiscoverView } from "@/components/discovery/DiscoverView";
 import type { DiscoverResponse } from "@/shared/contracts";
 import {
@@ -14,6 +14,10 @@ import {
 } from "./fixtures";
 
 const GOAL = "I want to build warehouse robotics";
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 const AMARA_EXCERPT = "I spent two years deploying robotics in fulfilment centres";
 const AMARA_CAVEAT = "Current availability needs confirmation.";
@@ -231,6 +235,54 @@ describe("error state", () => {
     await findReady();
     expect(run).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("shortlist and history", () => {
+  it("renders every person the search returns, past three", async () => {
+    const response = discoverResponse();
+    const extra = structuredClone(response.people[0]);
+    extra.member = { ...extra.member, id: "demo-extra", displayName: "Sam Extra", initials: "SE" };
+    response.people = [...response.people, extra];
+    await search(mockRun(response));
+    expect(await screen.findByRole("heading", { name: "4 people for this goal" })).toBeInTheDocument();
+    expect(screen.getByText("Sam Extra")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Why this person?" })).toHaveLength(4);
+  });
+
+  it("keeps earlier goals and restores that result without searching again", async () => {
+    const first = discoverResponse();
+    const second = discoverResponse();
+    second.searchId = "demo-search-car";
+    second.people = [
+      {
+        ...second.people[0],
+        member: { ...second.people[0].member, id: "demo-solo", displayName: "Solo Person", initials: "SP" },
+      },
+    ];
+    const run = vi.fn<RunDiscover>().mockResolvedValueOnce(okResult(first)).mockResolvedValueOnce(okResult(second));
+    const user = userEvent.setup();
+    const view = render(<DiscoverView bootstrap={bootstrap()} runDiscover={run} />);
+
+    await user.type(screen.getByLabelText("What do you want to build?"), GOAL);
+    await user.click(screen.getByRole("button", { name: "Find people" }));
+    await screen.findByRole("heading", { name: "3 people for this goal" });
+
+    await user.clear(screen.getByLabelText("What do you want to build?"));
+    await user.type(screen.getByLabelText("What do you want to build?"), "build a car");
+    await user.click(screen.getByRole("button", { name: "Find people" }));
+    await screen.findByRole("heading", { name: "1 person for this goal" });
+    expect(screen.getByText("Solo Person")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: new RegExp(GOAL) }));
+    expect(await screen.findByRole("heading", { name: "3 people for this goal" })).toBeInTheDocument();
+    expect(screen.queryByText("Solo Person")).not.toBeInTheDocument();
+    expect(run).toHaveBeenCalledTimes(2);
+
+    view.unmount();
+    render(<DiscoverView bootstrap={bootstrap()} runDiscover={vi.fn<RunDiscover>()} />);
+    expect(await screen.findByRole("button", { name: new RegExp(GOAL) })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /build a car/ })).toBeInTheDocument();
   });
 });
 

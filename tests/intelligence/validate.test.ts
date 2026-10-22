@@ -15,6 +15,7 @@ import {
   unrelatedCommunity,
 } from "../../src/server/intelligence/fixtures";
 import {
+  MAX_PEOPLE,
   validateRerank,
   type AllowedCommunity,
   type ValidationContext,
@@ -495,7 +496,7 @@ describe("validateRerank", () => {
     }
   });
 
-  it("keeps at most three people in model order after drops", () => {
+  it("keeps grounded people in model order after drops", () => {
     const fourth = samA.signals[0].evidence[0];
     const result = validateRerank(
       {
@@ -545,8 +546,24 @@ describe("validateRerank", () => {
       nina.member.id,
       leo.member.id,
       staleAvailability.member.id,
+      samA.member.id,
     ]);
-    expect(result.rejected).toEqual(["not_allowed", "bad_fit", "over_cap"]);
+    expect(result.rejected).toEqual(["not_allowed", "bad_fit"]);
+  });
+
+  it("drops people past the shortlist cap", () => {
+    const evidence = leo.signals[0].evidence[0];
+    const people = Array.from({ length: MAX_PEOPLE + 2 }, () =>
+      modelPerson({
+        memberId: leo.member.id,
+        fitType: "complementary_need",
+        reason: evidence.summary,
+        evidenceIds: [evidence.id],
+      }),
+    );
+    const result = validateRerank({ people }, contextFor([leo]));
+    expect(result.people).toHaveLength(MAX_PEOPLE);
+    expect(result.rejected).toEqual(["over_cap", "over_cap"]);
   });
 
   it("accepts a community reason from its description or focus tag and ignores the name", () => {

@@ -15,8 +15,9 @@ const FIT_TYPES: readonly FitType[] = [
   "speaker",
 ];
 
-const MAX_PEOPLE = 3;
-const MAX_COMMUNITIES = 2;
+/** Shortlist shown on the graph. A circle still proposes only the first few. */
+export const MAX_PEOPLE = 12;
+export const MAX_COMMUNITIES = 2;
 
 const CAVEAT_UNKNOWN_AVAILABILITY = "Current availability needs confirmation.";
 const CAVEAT_INTEREST = "This is a stated interest, not verified experience.";

@@ -13,7 +13,7 @@ import { matchBaseline } from "./match/baseline";
 import type { CogneeTransport } from "./memory/cognee";
 import { retrieveEvidence } from "./memory/retrieve";
 import type { OpenAIRerankClient } from "./validate/openai";
-import { validateRerank, type AllowedCommunity } from "./validate/rerank";
+import { MAX_PEOPLE, validateRerank, type AllowedCommunity } from "./validate/rerank";
 
 export class DiscoverInputError extends Error {
   readonly code: "BAD_INPUT" | "FORBIDDEN";
@@ -81,7 +81,7 @@ export async function discover(args: {
     );
   } else {
     raw = {
-      people: matched.hits.slice(0, 3).map((hit) => ({
+      people: matched.hits.slice(0, MAX_PEOPLE).map((hit) => ({
         memberId: hit.memberId,
         fitType: hit.fitType,
         reason: hit.reason,
