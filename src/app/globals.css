@@ -205,13 +205,9 @@
     margin: 16px auto 0;
     min-height: max(560px, min(820px, calc(100svh - 112px)));
     border-radius: 20px;
-    /* Ends on the page background so the bottom edge dissolves into the page. */
+    /* Ends on the page background top and bottom; no border, so the panel
+       blends into the page on all sides. */
     background: linear-gradient(180deg, #ffffff 0%, #f4f4f7 55%, #ffffff 100%);
-    /* Ring on three sides only; no line where the hero meets the page. */
-    box-shadow:
-      inset 1px 0 0 #dedee5,
-      inset -1px 0 0 #dedee5,
-      inset 0 1px 0 #dedee5;
     color: #111113;
     display: grid;
     place-items: center;
@@ -393,13 +389,11 @@
   }
 
   @media (max-width: 899px) {
-    .sw-hero-tile:not([data-core]) {
-      display: none;
-    }
-
+    /* All tiles stay visible; they shrink and fade so text wins on narrow screens. */
     .sw-hero-tile {
-      width: calc(var(--size) * 0.7);
-      height: calc(var(--size) * 0.7);
+      width: calc(var(--size) * 0.62);
+      height: calc(var(--size) * 0.62);
+      opacity: 0.65;
     }
   }
 
@@ -415,24 +409,44 @@
       background-size: 48px 48px;
     }
 
-    /* Push the remaining tiles to the edges, away from the text. */
+    /* Pin every tile to an edge, away from the headline. */
     .sw-hero-tile {
-      opacity: 0.4;
+      opacity: 0.45;
     }
 
     .sw-hero-tile:nth-child(1) {
-      left: 14%;
-      top: 9%;
+      left: 12%;
+      top: 8%;
+    }
+
+    .sw-hero-tile:nth-child(2) {
+      left: 5%;
+      top: 32%;
+    }
+
+    .sw-hero-tile:nth-child(3) {
+      left: 46%;
+      top: 5%;
     }
 
     .sw-hero-tile:nth-child(4) {
-      left: 86%;
-      top: 9%;
+      left: 88%;
+      top: 8%;
     }
 
     .sw-hero-tile:nth-child(5) {
-      left: 86%;
-      top: 92%;
+      left: 90%;
+      top: 90%;
+    }
+
+    .sw-hero-tile:nth-child(6) {
+      left: 93%;
+      top: 64%;
+    }
+
+    .sw-hero-tile:nth-child(7) {
+      left: 55%;
+      top: 94%;
     }
   }
 
