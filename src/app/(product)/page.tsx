@@ -1,9 +1,9 @@
-import { DiscoverScreen } from "@/components/discovery/DiscoverScreen";
+import { LandingFlow } from "@/components/hero/LandingFlow";
 
 export default function DiscoverPage() {
   return (
-    <main className="sw-shell">
-      <DiscoverScreen />
+    <main>
+      <LandingFlow />
     </main>
   );
 }

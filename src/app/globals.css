@@ -190,3 +190,260 @@
     gap: 16px;
   }
 }
+
+/*
+ * Landing hero (src/components/hero). Dark stage inset under the light header;
+ * near-black, faint blueprint grid, brand glow, floating community/member tiles.
+ */
+@layer components {
+  .sw-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    box-sizing: border-box;
+    max-width: 1280px;
+    margin: 16px auto 0;
+    min-height: max(560px, min(820px, calc(100svh - 112px)));
+    border-radius: 20px;
+    background: #0a0a0c;
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    padding: 96px 24px;
+  }
+
+  @media (min-width: 1328px) {
+    .sw-hero {
+      margin-top: 24px;
+    }
+  }
+
+  @media (max-width: 1327px) {
+    .sw-hero {
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+  }
+
+  .sw-hero-grid {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.055) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: center center;
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 30%, transparent 100%);
+  }
+
+  .sw-hero-glow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: -1;
+    width: min(900px, 120%);
+    aspect-ratio: 2 / 1;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgb(67 52 245 / 0.32), rgb(67 52 245 / 0.08) 60%, transparent);
+    pointer-events: none;
+  }
+
+  .sw-hero-content {
+    position: relative;
+    max-width: 1120px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sw-hero-title {
+    margin: 0;
+    font-size: clamp(40px, 6.4vw, 96px);
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  .sw-hero-sub {
+    margin: 28px 0 0;
+    max-width: 560px;
+    font-size: clamp(16px, 0.4vw + 15px, 19px);
+    line-height: 1.55;
+    color: #a3a3ad;
+    text-wrap: pretty;
+  }
+
+  .sw-hero-cta {
+    margin-top: 40px;
+    gap: 10px;
+    padding: 0 28px;
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.12) inset,
+      0 10px 40px -8px rgb(67 52 245 / 0.7);
+    transition: background-color 150ms ease, transform 150ms ease;
+  }
+
+  .sw-hero-cta:hover {
+    background: #2a1fc2;
+    color: #ffffff;
+  }
+
+  .sw-hero-cta:active {
+    transform: translateY(1px);
+  }
+
+  /* Decorative tiles */
+  .sw-hero-tiles {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .sw-hero-tile {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--size);
+    height: var(--size);
+    translate: -50% -50%;
+    rotate: var(--rotate);
+    animation: sw-hero-float 9s ease-in-out var(--delay) infinite;
+  }
+
+  .sw-hero-tile-face {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border-radius: 22%;
+    font-weight: 700;
+    font-size: calc(var(--size) * 0.3);
+    letter-spacing: -0.02em;
+    background: linear-gradient(160deg, #26262c, #141418);
+    border: 1px solid rgb(255 255 255 / 0.09);
+    color: #e8e8ee;
+    box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.8);
+  }
+
+  .sw-hero-tile[data-kind="community"] .sw-hero-tile-face {
+    background: linear-gradient(160deg, #5446ff, #3022d6);
+    border-color: rgb(255 255 255 / 0.18);
+    color: #ffffff;
+    box-shadow: 0 18px 44px -12px rgb(67 52 245 / 0.65);
+  }
+
+  /* Member tiles hold an avatar circle, like MemberAvatar. */
+  .sw-hero-tile[data-kind="member"] .sw-hero-tile-face::before {
+    content: "";
+    position: absolute;
+    inset: 16%;
+    border-radius: 50%;
+    background: #f4f4f7;
+    z-index: -1;
+  }
+
+  .sw-hero-tile[data-kind="member"] .sw-hero-tile-face {
+    position: relative;
+    isolation: isolate;
+    color: #111113;
+    font-size: calc(var(--size) * 0.24);
+  }
+
+  .sw-hero-tile[data-depth="0"] {
+    opacity: 0.35;
+    filter: blur(1.5px);
+  }
+
+  .sw-hero-tile[data-depth="1"] {
+    opacity: 0.6;
+    filter: blur(0.5px);
+  }
+
+  .sw-hero-tile[data-depth="2"] {
+    opacity: 0.9;
+  }
+
+  @keyframes sw-hero-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-12px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sw-hero-tile {
+      animation: none;
+    }
+
+    .sw-hero-cta {
+      transition: none;
+    }
+  }
+
+  @media (max-width: 899px) {
+    .sw-hero-tile:not([data-core]) {
+      display: none;
+    }
+
+    .sw-hero-tile {
+      width: calc(var(--size) * 0.7);
+      height: calc(var(--size) * 0.7);
+    }
+
+    .sw-hero-tile-face {
+      font-size: calc(var(--size) * 0.21);
+    }
+  }
+
+  @media (max-width: 639px) {
+    .sw-hero {
+      margin: 12px 12px 0;
+      padding: 88px 20px;
+      border-radius: 16px;
+      min-height: 0;
+    }
+
+    .sw-hero-grid {
+      background-size: 48px 48px;
+    }
+
+    /* Push the remaining tiles to the edges, away from the text. */
+    .sw-hero-tile {
+      opacity: 0.4;
+    }
+
+    .sw-hero-tile:nth-child(1) {
+      left: 14%;
+      top: 9%;
+    }
+
+    .sw-hero-tile:nth-child(4) {
+      left: 88%;
+      top: 7%;
+    }
+
+    .sw-hero-tile:nth-child(6) {
+      left: 86%;
+      top: 94%;
+    }
+  }
+
+  /* Discovery under the hero: the hero carries the headline, so drop the screen's own. */
+  .sw-flow-discover {
+    scroll-margin-top: 16px;
+    outline: none;
+  }
+
+  .sw-flow-discover #discover-title,
+  .sw-flow-discover #discover-title + .sw-sub {
+    display: none;
+  }
+}
