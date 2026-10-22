@@ -205,9 +205,13 @@
     margin: 16px auto 0;
     min-height: max(560px, min(820px, calc(100svh - 112px)));
     border-radius: 20px;
-    background: linear-gradient(180deg, #ffffff, #f4f4f7);
-    /* Inset ring rather than a border, so the box size stays identical. */
-    box-shadow: inset 0 0 0 1px #dedee5;
+    /* Ends on the page background so the bottom edge dissolves into the page. */
+    background: linear-gradient(180deg, #ffffff 0%, #f4f4f7 55%, #ffffff 100%);
+    /* Ring on three sides only; no line where the hero meets the page. */
+    box-shadow:
+      inset 1px 0 0 #dedee5,
+      inset -1px 0 0 #dedee5,
+      inset 0 1px 0 #dedee5;
     color: #111113;
     display: grid;
     place-items: center;
