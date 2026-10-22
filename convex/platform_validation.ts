@@ -128,9 +128,6 @@ export const saveSearchSchema = z
       .strict(),
   })
   .strict();
-export const sessionSchema = z
-  .object({ password: z.string().min(1).max(1024) })
-  .strict();
 export const pathIdSchema = id;
 export const tokenSchema = z
   .string()

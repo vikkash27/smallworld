@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import Link from "next/link";
-import { SignInForm } from "@/components/shell/SignInForm";
 import { GroupPicker } from "./GroupPicker";
 import type {
   ConnectionDetail,
@@ -94,17 +93,13 @@ const statusText: Record<string, string> = {
 export function ConnectionsScreen() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [error, setError] = useState<string | null>(null);
-  const [auth, setAuth] = useState(false),
-    [busy, setBusy] = useState(false),
+  const [busy, setBusy] = useState(false),
     [focused, setFocused] = useState<string | null>(null);
   const mutating = useRef(false),
     mounted = useRef(true);
   const refresh = useCallback(async (signal?: AbortSignal) => {
     const result = await call<Snapshot>("", "GET", undefined, signal);
-    if (mounted.current) {
-      setSnapshot(result);
-      setAuth(false);
-    }
+    if (mounted.current) setSnapshot(result);
   }, []);
   useEffect(() => {
     mounted.current = true;
@@ -118,11 +113,13 @@ export function ConnectionsScreen() {
         if (!document.hidden) await refresh(controller.signal);
       } catch (e) {
         if (!stopped && !controller.signal.aborted) {
-          if (e instanceof CallError && e.status === 401) setAuth(true);
-          else
-            setError(
-              e instanceof Error ? e.message : "Could not load connections",
-            );
+          setError(
+            e instanceof CallError && e.status === 401
+              ? "The demo session could not be opened. Refresh the page."
+              : e instanceof Error
+                ? e.message
+                : "Could not load connections",
+          );
         }
       }
       if (!stopped) timer = setTimeout(() => void tick(), 2500);
@@ -146,8 +143,13 @@ export function ConnectionsScreen() {
       await refresh();
     } catch (e) {
       if (mounted.current) {
-        if (e instanceof CallError && e.status === 401) setAuth(true);
-        setError(e instanceof Error ? e.message : "Connection request failed");
+        setError(
+          e instanceof CallError && e.status === 401
+            ? "The demo session could not be opened. Refresh the page."
+            : e instanceof Error
+              ? e.message
+              : "Connection request failed",
+        );
       }
     } finally {
       mutating.current = false;
@@ -188,9 +190,7 @@ export function ConnectionsScreen() {
           </button>
         </div>
       )}
-      {auth ? (
-        <SignInForm />
-      ) : !snapshot ? (
+      {!snapshot ? (
         <p role="status">Loading connections…</p>
       ) : (
         <>

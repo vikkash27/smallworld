@@ -61,19 +61,19 @@ npx convex dev --local          # keep running; terminal 1
 
 ```bash
 npm run platform:env            # writes CONVEX_URL / keys into .env.local
-# edit .env.local: set ADMIN_PASSWORD
 npm run seed                    # 12 communities + labelled fictional members
 npm run dev                     # terminal 2 → http://localhost:3000
 ```
 
-Sign in at `/login` with `ADMIN_PASSWORD`. The sample workspace ships with a
+Open http://localhost:3000. The demo signs you in automatically — there is no
+password. The sample workspace ships with a
 robotics-goal search (`demo-search-robotics`) so discovery works immediately.
 `POST /api/platform/demo/reset` rebuilds fictional data; live data is untouched.
 
 ## API
 
 All responses are `{ data, requestId }` or `{ error: { code, message, retryable }, requestId }`.
-Organizer session: `POST /api/platform/session` (HttpOnly cookie, 5 attempts/min).
+Organizer session: `POST /api/platform/session` (open demo, HttpOnly cookie, no password).
 
 | Endpoint | Purpose |
 | --- | --- |

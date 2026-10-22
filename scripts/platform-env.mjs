@@ -66,6 +66,6 @@ export async function loadPlatformEnv() {
 if (process.argv[1]?.endsWith("platform-env.mjs")) {
   await loadPlatformEnv();
   console.log(
-    "Synced local Convex URL/admin key and generated missing secrets in .env.local. Set ADMIN_PASSWORD before logging in.",
+    "Synced local Convex URL/admin key and generated missing secrets in .env.local.",
   );
 }

@@ -100,7 +100,6 @@ async function answer(
 beforeEach(() => {
   vi.stubEnv("SESSION_SECRET", "test-session-secret");
   vi.stubEnv("TOKEN_HASH_SECRET", "test-token-secret");
-  vi.stubEnv("ADMIN_PASSWORD", "test-password");
   vi.stubEnv("NEXT_PUBLIC_DATA_MODE", "sample");
   vi.stubEnv("APP_BASE_URL", "http://localhost:3000");
   port = new FixturePort(hashToken("sample-contribution-capability"));
@@ -132,68 +131,29 @@ describe("session and envelopes", () => {
     vi.advanceTimersByTime(12 * 60 * 60_000 + 1000);
     expect((await bootstrap(old)).status).toBe(401);
   });
-  it("sets the protected session cookie and throttles globally despite spoofed IPs", async () => {
-    vi.useFakeTimers();
-    const ok = await session(
-      request("session", "POST", { password: "test-password" }, false, {
-        "x-forwarded-for": "192.0.2.1",
-      }),
-    );
+  it("opens an organizer session without a password and sets the cookie", async () => {
+    const ok = await session(request("session", "POST", {}, false));
     expect(ok.status).toBe(200);
     expect(ok.headers.get("set-cookie")).toMatch(
       /sw_session=.*HttpOnly; SameSite=Lax; Max-Age=43200/,
     );
-    for (let i = 0; i < 5; i++)
-      expect(
-        (
-          await session(
-            request("session", "POST", { password: "bad" }, false, {
-              "x-forwarded-for": `192.0.2.${i + 2}`,
-            }),
-          )
-        ).status,
-      ).toBe(401);
-    expect(
-      (
-        await session(
-          request("session", "POST", { password: "bad" }, false, {
-            "x-forwarded-for": "198.51.100.1",
-          }),
-        )
-      ).status,
-    ).toBe(429);
-    vi.advanceTimersByTime(60_000);
-    expect(
-      (await session(request("session", "POST", { password: "bad" }, false))).status,
-    ).toBe(401);
-    expect(
-      (await session(request("session", "POST", { password: "test-password" }, false))).status,
-    ).toBe(200);
-  });
-  it("clears failed login attempts on success and does not count successful logins", async () => {
-    vi.useFakeTimers();
-    for (let round = 0; round < 2; round++) {
-      for (let i = 0; i < 4; i++) {
-        expect(
-          (await session(request("session", "POST", { password: "bad" }, false))).status,
-        ).toBe(401);
-      }
-      expect(
-        (await session(request("session", "POST", { password: "test-password" }, false))).status,
-      ).toBe(200);
-    }
-    for (let i = 0; i < 6; i++) {
-      expect(
-        (await session(request("session", "POST", { password: "test-password" }, false))).status,
-      ).toBe(200);
-    }
+    const token = ok.headers.get("set-cookie")?.match(/sw_session=([^;]+)/)?.[1];
+    const boot = await bootstrap(
+      request("bootstrap", "GET", undefined, false, {
+        Cookie: `sw_session=${token}`,
+      }),
+    );
+    expect(boot.status).toBe(200);
   });
   it("rejects malformed input, injected scope and cross-origin mutations", async () => {
     expect(
       (
-        await session(
-          new Request("http://localhost:3000/api/platform/session", {
+        await create(
+          new Request("http://localhost:3000/api/platform/circles", {
             method: "POST",
+            headers: {
+              Cookie: `sw_session=${issueSession(sampleViewer.id, sampleViewer.workspaceId)}`,
+            },
             body: "{",
           }),
         )

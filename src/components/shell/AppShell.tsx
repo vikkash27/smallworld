@@ -4,13 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { loadBootstrap } from "@/ui/discovery/client";
-import { SignInForm } from "./SignInForm";
 
 type Session =
   | { state: "loading" }
   | { state: "ready"; initials: string }
-  | { state: "unauthenticated" }
   | { state: "unknown" };
+
+async function ensureSession() {
+  let result = await loadBootstrap();
+  if (!result.ok && result.error.code === "UNAUTHENTICATED") {
+    const opened = await fetch("/api/platform/session", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
+    if (opened.ok) result = await loadBootstrap();
+  }
+  return result;
+}
 
 const navBase: CSSProperties = {
   display: "inline-flex",
@@ -41,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadBootstrap()
+    ensureSession()
       .then((result) => {
         if (cancelled) return;
         if (result.ok) {
@@ -49,8 +61,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           setSession(
             initials ? { state: "ready", initials } : { state: "unknown" },
           );
-        } else if (result.error.code === "UNAUTHENTICATED") {
-          setSession({ state: "unauthenticated" });
         } else {
           setSession({ state: "unknown" });
         }
@@ -130,7 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      {session.state === "unauthenticated" ? <SignInForm /> : children}
+      {session.state === "loading" ? null : children}
     </div>
   );
 }

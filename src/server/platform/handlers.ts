@@ -5,10 +5,9 @@ import {
   createCircleSchema,
   pathIdSchema,
   responseSchema,
-  sessionSchema,
   tokenSchema,
 } from "../../../convex/platform_validation";
-import { requireOrganizer, login } from "./auth";
+import { requireOrganizer, openSession } from "./auth";
 import { PlatformError } from "./errors";
 import { body, endpoint, type IdContext, type TokenContext } from "./http";
 import { getService } from "./runtime";
@@ -16,8 +15,7 @@ import { hashToken, newToken } from "./tokens";
 
 export function sessionPOST(request: Request) {
   return endpoint(request, async (requestId) => {
-    const { password } = await body(request, sessionSchema);
-    const cookie = await login(password);
+    const cookie = await openSession();
     return Response.json(
       { data: { authenticated: true }, requestId },
       {

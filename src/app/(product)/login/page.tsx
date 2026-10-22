@@ -1,9 +1,5 @@
-import { SignInForm } from "@/components/shell/SignInForm";
+import { redirect } from "next/navigation";
 
 export default function LoginPage() {
-  return (
-    <main className="sw-shell">
-      <SignInForm />
-    </main>
-  );
+  redirect("/");
 }

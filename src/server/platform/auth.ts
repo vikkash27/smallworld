@@ -83,33 +83,12 @@ export async function requireOrganizer(request: Request): Promise<Viewer> {
   };
 }
 
-let attempts: { count: number; until: number } | undefined;
-export async function login(password: string): Promise<string> {
-  const now = Date.now();
-  if (attempts && attempts.until <= now) attempts = undefined;
-  if (attempts && attempts.count >= 5)
-    throw new PlatformError(
-      "RATE_LIMITED",
-      "Too many login attempts; try again in a minute",
-      true,
-    );
-  const configured = process.env.ADMIN_PASSWORD;
-  if (!configured)
-    throw new PlatformError(
-      "PROVIDER_UNAVAILABLE",
-      "Organizer password is not configured",
-    );
-  if (!equal(password, configured)) {
-    attempts ??= { count: 0, until: now + 60_000 };
-    attempts.count += 1;
-    throw new PlatformError("UNAUTHENTICATED", "Incorrect password");
-  }
+/** Issues the workspace organizer session. The demo link is open: no password. */
+export async function openSession(): Promise<string> {
   const mode = dataMode();
   const workspaceId = mode === "sample" ? SAMPLE_WORKSPACE : LIVE_WORKSPACE;
   const workspace = await getService().getWorkspace(workspaceId);
   if (!workspace || workspace.organizerId !== hostId(mode))
     throw new PlatformError("PROVIDER_UNAVAILABLE", "Workspace is not seeded");
-  const session = issueSession(workspace.organizerId, workspace.id);
-  attempts = undefined;
-  return session;
+  return issueSession(workspace.organizerId, workspace.id);
 }
