@@ -1,0 +1,123 @@
+/*
+ * Track D styles. Every colour maps to one of the PRD tokens (light values as fallback) in this single block,
+ * so wiring to A's shared tokens, including their dark mode, is a one-place change. This container
+ * deliberately sets no background: the page background belongs to A's shell.
+ */
+.root {
+  --d-bg: var(--background, #ffffff);
+  --d-fg: var(--foreground, #111113);
+  --d-brand: var(--brand, #4334f5);
+  --d-on-brand: var(--on-brand, #ffffff);
+  --d-muted: var(--secondary-text, #55555d);
+  --d-border: var(--border, #dedee5);
+  --d-tile: color-mix(in srgb, var(--d-fg) 6%, var(--d-bg));
+  --d-danger: #b42318;
+  --d-danger-bg: color-mix(in srgb, #b42318 8%, var(--d-bg));
+  color: var(--d-fg);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.root, .root *, .root *::before, .root *::after { box-sizing: border-box; }
+
+.page { max-width: 760px; margin: 0 auto; padding: 32px 16px 80px; }
+.narrow { max-width: 480px; margin: 0 auto; padding: 24px 16px 64px; }
+
+.wordmark { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 24px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--d-muted); margin: 0 0 12px; }
+.title { font-size: clamp(36px, 7vw, 64px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 800; margin: 0 0 16px; overflow-wrap: anywhere; }
+.titleSm { font-size: clamp(30px, 8vw, 40px); line-height: 1.05; letter-spacing: -0.025em; font-weight: 800; margin: 0 0 20px; }
+.lede { font-size: 18px; color: var(--d-muted); margin: 0 0 28px; max-width: 60ch; }
+.h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+
+.panel { background: var(--d-tile); border-radius: 12px; padding: 20px; margin: 0 0 28px; }
+.panelLabel { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--d-muted); margin: 0 0 8px; }
+.panelTitle { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
+.panelText { margin: 0; color: var(--d-muted); }
+.panelMeta { margin: 8px 0 0; font-size: 14px; color: var(--d-muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 20px; border-radius: 8px; border: 1px solid transparent;
+  font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btnPrimary { background: var(--d-brand); color: var(--d-on-brand); width: 100%; justify-content: space-between; }
+.btnPrimaryAuto { width: auto; }
+.btnGhost { background: transparent; color: var(--d-fg); border-color: var(--d-border); }
+.btnLink { background: none; border: 0; color: var(--d-muted); font: inherit; min-height: 44px; padding: 0 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.btnRow { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
+.btn:focus-visible, .btnLink:focus-visible, .input:focus-visible, .check input:focus-visible, .link:focus-visible {
+  outline: 3px solid var(--d-brand); outline-offset: 2px;
+}
+
+.field { display: block; margin: 0 0 20px; }
+.label { display: block; font-weight: 600; margin: 0 0 6px; }
+.hint { display: block; font-size: 14px; color: var(--d-muted); margin: 4px 0 0; }
+.input {
+  width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 8px; font: inherit;
+  color: var(--d-fg); background: var(--d-bg); border: 1px solid var(--d-border);
+}
+textarea.input { min-height: 96px; resize: vertical; }
+.inputError { border-color: var(--d-danger); }
+.error { display: block; font-size: 14px; color: var(--d-danger); margin: 6px 0 0; }
+.twoCol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.check { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding: 8px 0; cursor: pointer; }
+.check input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--d-brand); flex: none; }
+.checkText { display: block; }
+.checkName { font-weight: 600; }
+.checkSub { display: block; font-size: 14px; color: var(--d-muted); }
+.fieldset { border: 0; padding: 0; margin: 0 0 20px; }
+.legend { font-weight: 600; padding: 0; margin: 0 0 4px; }
+
+.rosterHead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
+.tag { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--d-brand); }
+.tagMuted { color: var(--d-muted); }
+.list { list-style: none; padding: 0; margin: 0; }
+.row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--d-border); }
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--d-fg); color: var(--d-bg); font-size: 13px; font-weight: 700;
+}
+.avatarGhost { background: transparent; color: var(--d-muted); border: 1.5px dashed var(--d-border); }
+.rowName { font-weight: 700; font-size: 18px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.rowRole { font-size: 14px; color: var(--d-muted); }
+.note { font-size: 14px; color: var(--d-muted); margin: 16px 0 0; }
+
+.stateBox { border: 1px solid var(--d-border); border-radius: 12px; padding: 24px; }
+.stateTitle { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px; }
+.stateText { margin: 0 0 16px; color: var(--d-muted); }
+.stateError { border-color: var(--d-danger); background: var(--d-danger-bg); }
+.reqId { font-size: 12px; color: var(--d-muted); margin: 12px 0 0; }
+
+.banner { font-size: 14px; border-radius: 8px; padding: 10px 14px; margin: 0 0 20px; background: var(--d-tile); color: var(--d-muted); }
+.bannerWarn { background: var(--d-danger-bg); color: var(--d-danger); }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--d-border); color: var(--d-muted); margin-bottom: 16px; }
+
+.linkRow { padding: 16px 0; border-bottom: 1px solid var(--d-border); }
+.hostRow { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.linkWhoRow { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; }
+.linkWho { font-weight: 700; margin: 0; }
+.linkInputRow { display: flex; gap: 8px; }
+.linkInputRow .input { font-size: 14px; }
+.linkInputRow .btn { flex: none; width: auto; }
+.status { font-size: 13px; color: var(--d-muted); margin: 6px 0 0; }
+
+.listItem { display: block; padding: 18px 0; border-bottom: 1px solid var(--d-border); color: inherit; text-decoration: none; }
+.listTitle { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
+.listMeta { font-size: 14px; color: var(--d-muted); margin: 0; }
+.link { color: var(--d-brand); font-weight: 600; text-underline-offset: 3px; }
+
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 420px) {
+  .twoCol { grid-template-columns: 1fr; }
+  .linkInputRow { flex-direction: column; }
+  .linkInputRow .btn { width: 100%; }
+  .panel { padding: 16px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn { transition: opacity 120ms ease; }
+}
