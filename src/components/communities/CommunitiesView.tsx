@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Community } from "@/shared/contracts";
 import { CommunityPanel } from "./CommunityPanel";
@@ -29,6 +30,7 @@ export function CommunitiesView({ communities }: { communities: Community[] }) {
         Find your community.
       </h1>
       <p className="sw-sub">Start with a community that already exists.</p>
+      <Link href="/settings/connections" className="sw-btn sw-btn-brand" style={{ display: "inline-flex", alignItems: "center", marginTop: 20, textDecoration: "none" }}>Connect WhatsApp</Link>
 
       <div className="mt-10 flex max-w-[560px] flex-col gap-[10px]">
         <label htmlFor="cq" className="sw-label">

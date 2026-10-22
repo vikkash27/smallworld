@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { whatsappTables } from "./whatsapp/schema";
 
 // Contract IDs and ISO dates remain strings, including fixture IDs.
 const nullableString = v.union(v.string(), v.null());
@@ -96,6 +97,7 @@ const searchResult = v.object({
 // Indexes are not unique constraints. Domain writes check uniqueness inside
 // the same atomic mutation before inserting memberships and invitations.
 export default defineSchema({
+  ...whatsappTables,
   workspaces: defineTable({
     id: v.string(),
     dataMode,

@@ -11,3 +11,7 @@
 .DS_Store
 *.log
 private/
+
+/workers/whatsapp/node_modules/
+/workers/whatsapp/.env.local
+/workers/whatsapp/private/
