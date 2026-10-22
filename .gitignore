@@ -10,3 +10,4 @@
 /convex/.env
 .DS_Store
 *.log
+private/
