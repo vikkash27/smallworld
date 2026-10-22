@@ -61,10 +61,11 @@ export class ConvexPort implements PlatformService {
       input,
     });
   }
-  readSearch(viewer: Viewer, id: string) {
+  readSearch(viewer: Viewer, id: string, now = Date.now()) {
     return this.client.query(adminRef(internal.platform_queries.search), {
       viewer,
       id,
+      now,
     });
   }
   createCircle(
@@ -95,9 +96,10 @@ export class ConvexPort implements PlatformService {
       { viewer, id, input },
     );
   }
-  invitationView(tokenHash: string) {
+  invitationView(tokenHash: string, now: number) {
     return this.client.query(adminRef(internal.platform_queries.invitation), {
       tokenHash,
+      now,
     });
   }
   respond(tokenHash: string, input: InvitationResponseRequest) {

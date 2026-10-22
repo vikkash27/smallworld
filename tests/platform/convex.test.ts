@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { convexTest } from "convex-test";
+import { ConvexHttpClient } from "convex/browser";
 import schema from "../../convex/schema";
 import { internal } from "../../convex/_generated/api";
 import fixture from "@/shared/fixtures/discover-response.sample.json";
 import type { Viewer } from "@/shared/contracts";
+import { ConvexPort } from "@/server/platform/port";
 
 // A bounded module map keeps fixture JSON/declarations out of function loading.
 const modules = import.meta.glob("../../convex/**/*.{ts,js}");
@@ -24,6 +26,7 @@ beforeEach(async () => {
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 async function create(capacity = 6, minimumMembers = 3) {
   const draft = fixture.circleDraft!;
@@ -56,6 +59,7 @@ describe("Convex mutations and persisted invariants", () => {
     const before = await t.run((ctx) => ctx.db.query("invitations").collect());
     await t.query(internal.platform_queries.invitation, {
       tokenHash: "hash-one",
+      now: Date.now(),
     });
     expect(await t.run((ctx) => ctx.db.query("invitations").collect())).toEqual(
       before,
@@ -128,9 +132,31 @@ describe("Convex mutations and persisted invariants", () => {
       await t.query(internal.platform_queries.search, {
         viewer,
         id: fixture.searchId,
+        now: Date.now(),
       }),
     ).toBeNull();
     await expect(create()).rejects.toThrow(/Search not found/);
+  });
+
+  it("uses request time for search and invite expiry even while the query clock stays fixed", async () => {
+    await create();
+    vi.useFakeTimers();
+    const now = Date.now();
+    vi.spyOn(ConvexHttpClient.prototype, "query").mockImplementation(
+      (ref, args = {}) => t.query(ref, args),
+    );
+    const port = new ConvexPort("http://localhost:3210", "test-admin-key");
+    const saved = await port.readSearch(viewer, fixture.searchId, now);
+    expect(saved).not.toBeNull();
+    const invite = await port.invitationView("hash-one", now);
+    expect(invite.invitationStatus).toBe("pending");
+    expect(
+      await port.readSearch(viewer, fixture.searchId, Date.parse(saved!.expiresAt)),
+    ).toBeNull();
+    await expect(
+      port.invitationView("hash-one", Date.parse(invite.expiresAt)),
+    ).rejects.toThrow(/expired or was revoked/);
+    expect(Date.now()).toBe(now);
   });
 
   it("resolves an accepted/declined transition once", async () => {
@@ -144,6 +170,25 @@ describe("Convex mutations and persisted invariants", () => {
       invitationStatus: "declined",
     });
   });
+  it.each(["draft", "archived"] as const)(
+    "blocks joins but permits declines for %s circles",
+    async (status) => {
+      const c = await create();
+      await t.run(async (ctx) => {
+        const circle = await ctx.db
+          .query("circles")
+          .withIndex("by_domain_id", (q) => q.eq("id", c.id))
+          .unique();
+        await ctx.db.patch(circle!._id, { status });
+      });
+      await expect(answer("hash-one")).rejects.toThrow(/Circle/);
+      expect(await answer("hash-one", "decline")).toMatchObject({
+        acceptedCount: 1,
+        circleStatus: status,
+        invitationStatus: "declined",
+      });
+    },
+  );
   it("rejects revoked and expired capabilities without a GET write", async () => {
     await create();
     await t.run(async (ctx) => {
@@ -159,7 +204,10 @@ describe("Convex mutations and persisted invariants", () => {
       await ctx.db.patch(second!._id, { expiresAt: "2000-01-01T00:00:00Z" });
     });
     await expect(
-      t.query(internal.platform_queries.invitation, { tokenHash: "hash-one" }),
+      t.query(internal.platform_queries.invitation, {
+        tokenHash: "hash-one",
+        now: Date.now(),
+      }),
     ).rejects.toThrow(/expired or was revoked/);
     await expect(answer("hash-two")).rejects.toThrow(/expired or was revoked/);
     expect(

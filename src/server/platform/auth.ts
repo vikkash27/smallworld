@@ -83,20 +83,11 @@ export async function requireOrganizer(request: Request): Promise<Viewer> {
   };
 }
 
-const attempts = new Map<string, { count: number; until: number }>();
-export async function login(
-  request: Request,
-  password: string,
-): Promise<string> {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+let attempts: { count: number; until: number } | undefined;
+export async function login(password: string): Promise<string> {
   const now = Date.now();
-  for (const [key, value] of attempts)
-    if (value.until <= now) attempts.delete(key);
-  const entry = attempts.get(ip) ?? { count: 0, until: now + 60_000 };
-  entry.count += 1;
-  attempts.set(ip, entry);
-  if (entry.count > 5)
+  if (attempts && attempts.until <= now) attempts = undefined;
+  if (attempts && attempts.count >= 5)
     throw new PlatformError(
       "RATE_LIMITED",
       "Too many login attempts; try again in a minute",
@@ -108,12 +99,17 @@ export async function login(
       "PROVIDER_UNAVAILABLE",
       "Organizer password is not configured",
     );
-  if (!equal(password, configured))
+  if (!equal(password, configured)) {
+    attempts ??= { count: 0, until: now + 60_000 };
+    attempts.count += 1;
     throw new PlatformError("UNAUTHENTICATED", "Incorrect password");
+  }
   const mode = dataMode();
   const workspaceId = mode === "sample" ? SAMPLE_WORKSPACE : LIVE_WORKSPACE;
   const workspace = await getService().getWorkspace(workspaceId);
   if (!workspace || workspace.organizerId !== hostId(mode))
     throw new PlatformError("PROVIDER_UNAVAILABLE", "Workspace is not seeded");
-  return issueSession(workspace.organizerId, workspace.id);
+  const session = issueSession(workspace.organizerId, workspace.id);
+  attempts = undefined;
+  return session;
 }

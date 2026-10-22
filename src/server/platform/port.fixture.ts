@@ -102,8 +102,8 @@ export class FixturePort implements PlatformService {
   saveSearch(viewer: Viewer, input: SaveSearchInput) {
     return this.write((s) => model.saveSearch(s, viewer, input));
   }
-  readSearch(viewer: Viewer, id: string) {
-    return this.read((s) => model.readSearch(s, viewer, id));
+  readSearch(viewer: Viewer, id: string, now = Date.now()) {
+    return this.read((s) => model.readSearch(s, viewer, id, now));
   }
   createCircle(
     viewer: Viewer,
@@ -121,8 +121,8 @@ export class FixturePort implements PlatformService {
   updateActivity(viewer: Viewer, id: string, input: ActivityUpdateRequest) {
     return this.write((s) => model.updateActivity(s, viewer, id, input));
   }
-  invitationView(hash: string) {
-    return this.read((s) => model.invitationView(s, hash));
+  invitationView(hash: string, now: number) {
+    return this.read((s) => model.invitationView(s, hash, now));
   }
   respond(hash: string, input: InvitationResponseRequest) {
     return this.write((s) => model.respond(s, hash, input));

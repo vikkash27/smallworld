@@ -107,6 +107,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
 
@@ -131,7 +132,8 @@ describe("session and envelopes", () => {
     vi.advanceTimersByTime(12 * 60 * 60_000 + 1000);
     expect((await bootstrap(old)).status).toBe(401);
   });
-  it("sets the protected session cookie and throttles after five attempts per IP", async () => {
+  it("sets the protected session cookie and throttles globally despite spoofed IPs", async () => {
+    vi.useFakeTimers();
     const ok = await session(
       request("session", "POST", { password: "test-password" }, false, {
         "x-forwarded-for": "192.0.2.1",
@@ -146,7 +148,7 @@ describe("session and envelopes", () => {
         (
           await session(
             request("session", "POST", { password: "bad" }, false, {
-              "x-forwarded-for": "192.0.2.2",
+              "x-forwarded-for": `192.0.2.${i + 2}`,
             }),
           )
         ).status,
@@ -155,11 +157,36 @@ describe("session and envelopes", () => {
       (
         await session(
           request("session", "POST", { password: "bad" }, false, {
-            "x-forwarded-for": "192.0.2.2",
+            "x-forwarded-for": "198.51.100.1",
           }),
         )
       ).status,
     ).toBe(429);
+    vi.advanceTimersByTime(60_000);
+    expect(
+      (await session(request("session", "POST", { password: "bad" }, false))).status,
+    ).toBe(401);
+    expect(
+      (await session(request("session", "POST", { password: "test-password" }, false))).status,
+    ).toBe(200);
+  });
+  it("clears failed login attempts on success and does not count successful logins", async () => {
+    vi.useFakeTimers();
+    for (let round = 0; round < 2; round++) {
+      for (let i = 0; i < 4; i++) {
+        expect(
+          (await session(request("session", "POST", { password: "bad" }, false))).status,
+        ).toBe(401);
+      }
+      expect(
+        (await session(request("session", "POST", { password: "test-password" }, false))).status,
+      ).toBe(200);
+    }
+    for (let i = 0; i < 6; i++) {
+      expect(
+        (await session(request("session", "POST", { password: "test-password" }, false))).status,
+      ).toBe(200);
+    }
   });
   it("rejects malformed input, injected scope and cross-origin mutations", async () => {
     expect(
@@ -213,7 +240,12 @@ describe("directory and saved searches", () => {
   });
   it("returns the preview but hides searches owned by other viewers, workspaces or expired", async () => {
     const ctx = idContext(fixture.searchId);
+    vi.useFakeTimers();
+    const reads = vi.spyOn(port, "readSearch");
     expect((await search(request("searches/id"), ctx)).status).toBe(200);
+    expect(reads).toHaveBeenLastCalledWith(
+      sampleViewer, fixture.searchId, Date.now(),
+    );
     expect(await port.readSearch(liveViewer, fixture.searchId)).toBeNull();
     vi.stubEnv("NEXT_PUBLIC_DATA_MODE", "live");
     const live = request("searches/id", "GET", undefined, false, {
@@ -222,9 +254,11 @@ describe("directory and saved searches", () => {
     expect((await search(live, ctx)).status).toBe(404);
     vi.stubEnv("NEXT_PUBLIC_DATA_MODE", "sample");
     await port.bootstrap(sampleViewer);
-    vi.useFakeTimers();
     vi.advanceTimersByTime(31 * 60_000);
     expect((await search(request("searches/id"), ctx)).status).toBe(404);
+    expect(reads).toHaveBeenLastCalledWith(
+      sampleViewer, fixture.searchId, Date.now(),
+    );
   });
   it("permission-filters contexts and validates saved evidence", async () => {
     const contexts = await port.getCandidateContexts(sampleViewer, [
@@ -300,6 +334,27 @@ describe("circle and invitation flow", () => {
     });
     expect(detail.acceptedCount).toBe(2);
   });
+  it.each(["join", "decline"])(
+    "returns the original %s result after token expiry",
+    async (decision) => {
+      const c = await created();
+      const first = await answer(c, 0, decision);
+      expect(first.status).toBe(200);
+      const original = (await first.json()).data;
+      const detail = await port.circleDetail(sampleViewer, c.circle.id);
+      vi.useFakeTimers();
+      vi.advanceTimersByTime(24 * 60 * 60_000 + 1000);
+      const repeated = await answer(c, 0, decision);
+      expect(repeated.status).toBe(200);
+      expect((await repeated.json()).data).toEqual(original);
+      const after = await port.circleDetail(sampleViewer, c.circle.id);
+      expect(after.roster).toEqual(detail.roster);
+      expect(after.acceptedCount).toBe(detail.acceptedCount);
+      expect(
+        (await answer(c, 0, decision === "join" ? "decline" : "join")).status,
+      ).toBe(410);
+    },
+  );
   it("serializes two joins competing for the final seat and returns 409", async () => {
     const c = await created(circleInput({ capacity: 2, minimumMembers: 2 }));
     const responses = await Promise.all([answer(c, 0), answer(c, 1)]);
@@ -307,6 +362,49 @@ describe("circle and invitation flow", () => {
     expect(
       (await port.circleDetail(sampleViewer, c.circle.id)).acceptedCount,
     ).toBe(2);
+  });
+  it("lets a third invitee join an active circle with a free seat", async () => {
+    const c = await created(
+      circleInput({ selectedMemberIds: fixture.circleDraft!.proposedMemberIds }),
+    );
+    await activity(
+      request("circles/id/activity", "PATCH", {
+        activity: c.circle.activity,
+        confirmed: true,
+      }),
+      idContext(c.circle.id),
+    );
+    expect((await answer(c, 0)).status).toBe(200);
+    expect((await (await answer(c, 1)).json()).data.circleStatus).toBe("active");
+    const third = await answer(c, 2);
+    expect(third.status).toBe(200);
+    expect((await third.json()).data).toMatchObject({
+      acceptedCount: 4,
+      circleStatus: "active",
+      invitationStatus: "accepted",
+    });
+    expect(
+      (await port.circleDetail(sampleViewer, c.circle.id)).roster,
+    ).toHaveLength(4);
+  });
+  it("allows a pending invitee to decline an active circle at capacity", async () => {
+    const c = await created(circleInput({ capacity: 2, minimumMembers: 2 }));
+    await answer(c, 0);
+    await activity(
+      request("circles/id/activity", "PATCH", {
+        activity: c.circle.activity,
+        confirmed: true,
+      }),
+      idContext(c.circle.id),
+    );
+    expect((await answer(c, 1)).status).toBe(409);
+    const declined = await answer(c, 1, "decline");
+    expect(declined.status).toBe(200);
+    expect((await declined.json()).data).toMatchObject({
+      acceptedCount: 2,
+      circleStatus: "active",
+      invitationStatus: "declined",
+    });
   });
   it("resolves accept/decline races once and supports idempotent declines", async () => {
     const c = await created();
@@ -322,6 +420,15 @@ describe("circle and invitation flow", () => {
   });
   it("returns 410 for expired invitations and 404 for unknown capabilities", async () => {
     const c = await created();
+    vi.useFakeTimers();
+    const reads = vi.spyOn(port, "invitationView");
+    expect(
+      (await invitation(
+        request("invitations/token", "GET", undefined, false),
+        tokenContext(tokenOf(c)),
+      )).status,
+    ).toBe(200);
+    expect(reads).toHaveBeenLastCalledWith(hashToken(tokenOf(c)), Date.now());
     expect(
       (
         await invitation(
@@ -330,7 +437,6 @@ describe("circle and invitation flow", () => {
         )
       ).status,
     ).toBe(404);
-    vi.useFakeTimers();
     vi.advanceTimersByTime(24 * 60 * 60_000 + 1000);
     expect(
       (
@@ -340,6 +446,7 @@ describe("circle and invitation flow", () => {
         )
       ).status,
     ).toBe(410);
+    expect(reads).toHaveBeenLastCalledWith(hashToken(tokenOf(c)), Date.now());
     expect((await answer(c)).status).toBe(410);
   });
   it("rejects arbitrary candidate injection, repeated IDs and invalid minimum/capacity", async () => {

@@ -29,12 +29,13 @@ export const contexts = internalQuery({
     ),
 });
 export const search = internalQuery({
-  args: { ...viewerArg, id: v.string() },
+  args: { ...viewerArg, id: v.string(), now: v.number() },
   handler: (ctx, args) =>
     model.readSearch(
       convexStore(ctx.db),
       viewerSchema.parse(args.viewer),
       args.id,
+      args.now,
     ),
 });
 export const circles = internalQuery({
@@ -52,7 +53,7 @@ export const circle = internalQuery({
     ),
 });
 export const invitation = internalQuery({
-  args: { tokenHash: v.string() },
+  args: { tokenHash: v.string(), now: v.number() },
   handler: (ctx, args) =>
-    model.invitationView(convexStore(ctx.db), args.tokenHash),
+    model.invitationView(convexStore(ctx.db), args.tokenHash, args.now),
 });

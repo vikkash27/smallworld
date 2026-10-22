@@ -17,7 +17,7 @@ import { hashToken, newToken } from "./tokens";
 export function sessionPOST(request: Request) {
   return endpoint(request, async (requestId) => {
     const { password } = await body(request, sessionSchema);
-    const cookie = await login(request, password);
+    const cookie = await login(password);
     return Response.json(
       { data: { authenticated: true }, requestId },
       {
@@ -44,7 +44,7 @@ export function searchGET(request: Request, context: IdContext) {
   return endpoint(request, async () => {
     const viewer = await requireOrganizer(request);
     const id = pathIdSchema.parse((await context.params).id);
-    const saved = await getService().readSearch(viewer, id);
+    const saved = await getService().readSearch(viewer, id, Date.now());
     if (!saved)
       throw new PlatformError("NOT_FOUND", "Search not found or expired");
     return {
@@ -118,7 +118,7 @@ export function activityPATCH(request: Request, context: IdContext) {
 export function invitationGET(request: Request, context: TokenContext) {
   return endpoint(request, async () => {
     const token = tokenSchema.parse((await context.params).token);
-    return getService().invitationView(hashToken(token));
+    return getService().invitationView(hashToken(token), Date.now());
   });
 }
 export function respondPOST(request: Request, context: TokenContext) {

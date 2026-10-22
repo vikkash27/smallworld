@@ -10,12 +10,18 @@ import type {
   InvitationResponseRequest,
   InvitationView,
   PlatformPort,
+  SavedSearch,
   Viewer,
 } from "@/shared/contracts";
 import type { InvitationToken } from "../../../convex/platform_model";
 import type { Row } from "../../../convex/platform_store";
 
 export interface PlatformService extends PlatformPort {
+  readSearch(
+    viewer: Viewer,
+    id: string,
+    now?: number,
+  ): Promise<SavedSearch | null>;
   getWorkspace(id: string): Promise<Row<"workspaces"> | null>;
   bootstrap(viewer: Viewer): Promise<BootstrapResponse>;
   createCircle(
@@ -30,7 +36,7 @@ export interface PlatformService extends PlatformPort {
     id: string,
     input: ActivityUpdateRequest,
   ): Promise<CircleDetail>;
-  invitationView(hash: string): Promise<InvitationView>;
+  invitationView(hash: string, now: number): Promise<InvitationView>;
   respond(
     hash: string,
     input: InvitationResponseRequest,

@@ -31,7 +31,7 @@ export const LIVE_WORKSPACE = "live-workspace";
 export const hostId = (mode: "sample" | "live") =>
   mode === "sample" ? "demo-host" : "live-host";
 const nowIso = () => new Date().toISOString();
-const fresh = (expiry: string) => Date.parse(expiry) > Date.now();
+const fresh = (expiry: string, now = Date.now()) => Date.parse(expiry) > now;
 const scoped = (
   row: { workspaceId: string; dataMode: string },
   viewer: { workspaceId: string; dataMode: string },
@@ -189,6 +189,7 @@ export async function readSearch(
   store: Store,
   viewer: Viewer,
   id: string,
+  now: number,
 ): Promise<SavedSearch | null> {
   await authorize(store, viewer);
   const search = await store.get("searches", id);
@@ -196,7 +197,7 @@ export async function readSearch(
     !search ||
     !scoped(search, viewer) ||
     search.viewerId !== viewer.id ||
-    !fresh(search.expiresAt) ||
+    !fresh(search.expiresAt, now) ||
     search.communityIds.some((id) => !viewer.allowedCommunityIds.includes(id))
   )
     return null;
@@ -346,7 +347,7 @@ export async function createCircle(
   tokens: InvitationToken[],
 ): Promise<CircleDetail> {
   const input = createCircleSchema.parse(raw);
-  const search = await readSearch(store, viewer, input.searchId);
+  const search = await readSearch(store, viewer, input.searchId, Date.now());
   if (!search) fail("NOT_FOUND", "Search not found or expired");
   const proposal = search.result.circleDraft;
   if (
@@ -439,18 +440,27 @@ export async function updateActivity(
 async function invitationForToken(store: Store, hash: string) {
   const i = await store.byToken("invitations", hash);
   if (!i) fail("NOT_FOUND", "Invitation not found");
-  if (!fresh(i.expiresAt) || i.status === "expired" || i.status === "revoked")
-    fail("EXPIRED", "Invitation has expired or was revoked");
   const c = await store.get("circles", i.circleId);
   if (!c || !scoped(c, i)) fail("NOT_FOUND", "Circle not found");
   return { i, c };
 }
 
+function checkInvitationExpiry(i: Row<"invitations">, now: number) {
+  if (
+    !fresh(i.expiresAt, now) ||
+    i.status === "expired" ||
+    i.status === "revoked"
+  )
+    fail("EXPIRED", "Invitation has expired or was revoked");
+}
+
 export async function invitationView(
   store: Store,
   hash: string,
+  now: number,
 ): Promise<InvitationView> {
   const { i, c } = await invitationForToken(store, hash);
+  checkInvitationExpiry(i, now);
   const host = await store.get("members", c.hostMemberId);
   if (!host || !scoped(host, c)) fail("NOT_FOUND", "Host not found");
   // Expiry is derived without writing: GET/unfurlers cannot change state.
@@ -478,10 +488,12 @@ export async function respond(
       acceptedCount: c.acceptedCount,
       circleStatus: c.status,
     };
+  checkInvitationExpiry(i, Date.now());
   if (i.status !== "pending")
     fail("CONFLICT", "Invitation already has a different response");
-  if (c.status !== "forming") fail("CONFLICT", "Circle is no longer forming");
   if (input.decision === "join") {
+    if (c.status === "draft" || c.status === "archived")
+      fail("CONFLICT", "Circle is not open for joining");
     const member = await store.get("members", i.intendedMemberId);
     if (!member || !scoped(member, c))
       fail("NOT_FOUND", "Invited member not found");
